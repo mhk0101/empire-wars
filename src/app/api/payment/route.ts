@@ -1,9 +1,6 @@
 import { getOrCreatePlayer, syncPlayer } from "@/game/session";
-import {
-  GEM_PACKS,
-  PAYMENT_CARD,
-  PAYMENT_CARD_HOLDER,
-} from "@/game/config";
+import { GEM_PACKS } from "@/game/config";
+import { getSettings } from "@/game/settings";
 import { db } from "@/db";
 import { paymentRequests } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -20,9 +17,10 @@ export async function GET() {
     .orderBy(desc(paymentRequests.createdAt))
     .limit(10);
 
+  const s = await getSettings();
   return Response.json({
-    card: PAYMENT_CARD,
-    cardHolder: PAYMENT_CARD_HOLDER,
+    card: s.paymentCard,
+    cardHolder: s.paymentCardHolder,
     requests: mine,
   });
 }

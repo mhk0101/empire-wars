@@ -41,7 +41,10 @@ interface Stats {
 export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"stats" | "players" | "payments">("stats");
+  const [tab, setTab] = useState<
+    "stats" | "players" | "payments" | "settings"
+  >("stats");
+  const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -116,8 +119,19 @@ export default function AdminApp() {
     if (tab === "stats") loadStats();
     if (tab === "payments") loadPayments();
     if (tab === "players") loadPlayers(search);
+    if (tab === "settings")
+      api("?view=settings").then((d) => setSettingsData(d.settings || {}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab]);
+
+  async function saveSettingsAdmin() {
+    const d = await api("", {
+      method: "POST",
+      body: JSON.stringify({ action: "saveSettings", settings: settingsData }),
+    });
+    if (d.error) setMsg("خطا: " + d.error);
+    else setMsg("تنظیمات ذخیره شد ✅");
+  }
 
   async function review(id: number, action: string) {
     await api("", { method: "POST", body: JSON.stringify({ id, action }) });
@@ -201,11 +215,12 @@ export default function AdminApp() {
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
+            ["settings", "⚙️ تنظیمات"],
           ].map(([id, label]) => (
             <button
               key={id}
               onClick={() => setTab(id as typeof tab)}
-              className={`flex-1 rounded-xl py-2 text-xs font-bold ${
+              className={`flex-1 rounded-xl py-2 text-[11px] font-bold ${
                 tab === id ? "btn-gold" : "card text-slate-300"
               }`}
             >
@@ -454,8 +469,94 @@ export default function AdminApp() {
             </div>
           </div>
         )}
+
+        {/* تنظیمات */}
+        {tab === "settings" && (
+          <div className="space-y-5">
+            <SettingsGroup title="💳 پرداخت">
+              <SettingField label="شماره کارت" k="paymentCard" data={settingsData} set={setSettingsData} />
+              <SettingField label="نام صاحب حساب" k="paymentCardHolder" data={settingsData} set={setSettingsData} />
+            </SettingsGroup>
+
+            <SettingsGroup title="🔐 امنیت">
+              <SettingField label="رمز پنل ادمین" k="adminPassword" data={settingsData} set={setSettingsData} />
+            </SettingsGroup>
+
+            <SettingsGroup title="🎁 جایزه ورود روزانه (طلا)">
+              <SettingField label="روز ۱" k="daily1" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۲" k="daily2" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۳" k="daily3" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۴" k="daily4" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۵" k="daily5" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۶" k="daily6" data={settingsData} set={setSettingsData} num />
+              <SettingField label="روز ۷ (جم)" k="daily7Gems" data={settingsData} set={setSettingsData} num />
+            </SettingsGroup>
+
+            <SettingsGroup title="🤝 پاداش دعوت">
+              <SettingField label="طلا به دعوت‌کننده" k="inviteGold" data={settingsData} set={setSettingsData} num />
+              <SettingField label="جم به دعوت‌کننده" k="inviteGems" data={settingsData} set={setSettingsData} num />
+              <SettingField label="طلا به تازه‌وارد" k="inviteGoldNew" data={settingsData} set={setSettingsData} num />
+              <SettingField label="جم به تازه‌وارد" k="inviteGemsNew" data={settingsData} set={setSettingsData} num />
+              <SettingField label="سقف دعوت روزانه" k="inviteDailyLimit" data={settingsData} set={setSettingsData} num />
+            </SettingsGroup>
+
+            <SettingsGroup title="💎 قیمت بسته‌های جم (تومان)">
+              <SettingField label="بسته ۱۰۰ جم" k="gemPack1Price" data={settingsData} set={setSettingsData} num />
+              <SettingField label="بسته ۵۰۰ جم" k="gemPack2Price" data={settingsData} set={setSettingsData} num />
+              <SettingField label="بسته ۱۰۰۰ جم" k="gemPack3Price" data={settingsData} set={setSettingsData} num />
+            </SettingsGroup>
+
+            <button
+              onClick={saveSettingsAdmin}
+              className="btn-gold w-full rounded-xl py-3 text-sm"
+            >
+              💾 ذخیره همه تنظیمات
+            </button>
+          </div>
+        )}
       </div>
     </main>
+  );
+}
+
+function SettingsGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+      <h3 className="mb-3 text-sm font-bold text-[#f5c542]">{title}</h3>
+      <div className="grid grid-cols-2 gap-2">{children}</div>
+    </div>
+  );
+}
+
+function SettingField({
+  label,
+  k,
+  data,
+  set,
+  num,
+}: {
+  label: string;
+  k: string;
+  data: Record<string, string>;
+  set: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  num?: boolean;
+}) {
+  return (
+    <label className="block text-[11px] text-slate-400">
+      {label}
+      <input
+        type={num ? "number" : "text"}
+        value={data[k] ?? ""}
+        onChange={(e) => set((d) => ({ ...d, [k]: e.target.value }))}
+        className="mt-1 w-full rounded-lg border border-white/10 bg-[#0a0e1a] px-2 py-2 text-sm text-slate-100"
+      />
+    </label>
   );
 }
 

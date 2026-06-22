@@ -1,9 +1,9 @@
 import { getOrCreatePlayer, syncPlayer } from "@/game/session";
-import { DAILY_REWARDS } from "@/game/config";
 import { db } from "@/db";
 import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logActivity } from "@/game/activity";
+import { getSettings } from "@/game/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,13 @@ export async function POST() {
     streak = 1;
   }
   const dayIndex = ((streak - 1) % 7) + 1;
-  const reward = DAILY_REWARDS.find((r) => r.day === dayIndex)!;
+
+  // پاداش روزانه از تنظیمات (قابل تغییر از پنل ادمین)
+  const s = await getSettings();
+  const reward =
+    dayIndex === 7
+      ? { gold: 0, gems: Number(s.daily7Gems) || 30 }
+      : { gold: Number(s[`daily${dayIndex}`]) || 0, gems: 0 };
 
   const updated = await db
     .update(players)

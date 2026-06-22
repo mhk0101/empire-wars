@@ -1,4 +1,4 @@
-import { ADMIN_PASSWORD } from "@/game/config";
+import { getSettings, saveSettings, SETTING_DEFAULTS } from "@/game/settings";
 import { db } from "@/db";
 import {
   paymentRequests,
@@ -16,17 +16,24 @@ import { eq, desc, ilike, or, sql, count } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: Request): boolean {
-  return req.headers.get("x-admin-pass") === ADMIN_PASSWORD;
+async function checkAuth(req: Request): Promise<boolean> {
+  const s = await getSettings();
+  return req.headers.get("x-admin-pass") === s.adminPassword;
 }
 
 // ===== GET: داده‌های پنل =====
 export async function GET(req: Request) {
-  if (!checkAuth(req)) {
+  if (!(await checkAuth(req))) {
     return Response.json({ error: "دسترسی غیرمجاز" }, { status: 401 });
   }
   const url = new URL(req.url);
   const view = url.searchParams.get("view") ?? "payments";
+
+  // تنظیمات
+  if (view === "settings") {
+    const s = await getSettings(true);
+    return Response.json({ settings: s, keys: Object.keys(SETTING_DEFAULTS) });
+  }
 
   // درخواست‌های پرداخت
   if (view === "payments") {
@@ -109,11 +116,23 @@ export async function GET(req: Request) {
 
 // ===== POST: عملیات =====
 export async function POST(req: Request) {
-  if (!checkAuth(req)) {
+  if (!(await checkAuth(req))) {
     return Response.json({ error: "دسترسی غیرمجاز" }, { status: 401 });
   }
   const body = await req.json().catch(() => ({}));
   const action = String(body.action);
+
+  // --- ذخیره تنظیمات ---
+  if (action === "saveSettings") {
+    const patch = (body.settings || {}) as Record<string, string>;
+    // فقط کلیدهای مجاز
+    const allowed: Record<string, string> = {};
+    for (const k of Object.keys(SETTING_DEFAULTS)) {
+      if (patch[k] !== undefined) allowed[k] = String(patch[k]);
+    }
+    await saveSettings(allowed);
+    return Response.json({ ok: true });
+  }
 
   // --- تأیید/رد پرداخت ---
   if (action === "approve" || action === "reject") {

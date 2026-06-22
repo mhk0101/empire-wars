@@ -203,3 +203,9 @@ export const playerMissions = pgTable("player_missions", {
   claimed: boolean("claimed").notNull().default(false),
   periodKey: varchar("period_key", { length: 16 }).notNull(), // برای ریست روزانه/هفتگی
 });
+
+// تنظیمات قابل ویرایش از پنل ادمین (key/value)
+export const settings = pgTable("settings", {
+  key: varchar("key", { length: 48 }).primaryKey(),
+  value: text("value").notNull().default(""),
+});

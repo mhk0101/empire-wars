@@ -62,5 +62,8 @@ CREATE TABLE IF NOT EXISTS player_missions (
   kind varchar(8) NOT NULL, progress integer NOT NULL DEFAULT 0,
   claimed boolean NOT NULL DEFAULT false, period_key varchar(16) NOT NULL
 );
+CREATE TABLE IF NOT EXISTS settings (
+  key varchar(48) PRIMARY KEY, value text NOT NULL DEFAULT ''
+);
 
 -- پایان مهاجرت ✅
