@@ -5,9 +5,11 @@ const API = TOKEN ? `https://api.telegram.org/bot${TOKEN}` : "";
 
 // آدرس وب‌اپ بازی (برای دکمه ورود به بازی)
 export function gameUrl(): string {
-  // اولویت با متغیر محیطی، اگر نبود از هدرهای درخواست در لایه بالاتر استفاده می‌شود
-  const url = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
-  return url.replace(/\/$/, "");
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    ""
+  ).replace(/\/$/, "");
 }
 
 export function botEnabled() {

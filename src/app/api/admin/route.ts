@@ -65,8 +65,8 @@ export async function GET(req: Request) {
       ? await base
           .where(
             or(
-              ilike(players.username, `%${q}%`),
-              sql`cast(${players.id} as text) = ${q}`
+              ilike(players.username, sql.raw(`'%${q}%'`)),
+              sql`cast(${players.id} as text) ilike ${'%' + q + '%'}`
             )
           )
           .orderBy(desc(players.power))

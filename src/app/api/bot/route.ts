@@ -143,12 +143,11 @@ export async function POST(req: Request) {
           : `کد دعوت: ${player.inviteCode}`;
         await sendMessage(
           chatId,
-          `⚔️ <b>دعوت از متحدین جدید</b>\n\n` +
-            `فرمانده، ارتش خود را با دعوت از دوستانتان بزرگتر کنید!\n\n` +
-            `🔹 کد اختصاصی شما: <code>${player.inviteCode}</code>\n` +
-            `🔹 تعداد دعوت‌های شما: <b>${fa(player.inviteCount)}</b>\n\n` +
-            `🎁 <b>پاداش:</b> به ازای هر دعوت موفق، ۵۰۰ طلا و ۲۰ جم دریافت کنید.\n\n` +
-            `🔗 <b>لینک ورود مستقیم دوستان شما:</b>\n${link}`
+          `👥 <b>دعوت دوستان</b>\n\n` +
+            `کد دعوت تو: <code>${player.inviteCode}</code>\n` +
+            `تعداد دعوت موفق: ${fa(player.inviteCount)}\n\n` +
+            `هر دعوت موفق: +۵۰۰ طلا و +۲۰ جم 🎉\n\n` +
+            `لینک دعوت:\n${link}`
         );
       } else if (data === "no_url") {
         await answerCallback(cq.id, "آدرس بازی هنوز تنظیم نشده است.");
