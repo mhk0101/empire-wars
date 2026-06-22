@@ -1,0 +1,21 @@
+{
+  "name": "Empire Wars — جنگ امپراتوری‌ها",
+  "short_name": "Empire Wars",
+  "description": "بازی استراتژیک؛ امپراتوری خود را بساز و بر سرور تسلط پیدا کن.",
+  "start_url": "/game",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
