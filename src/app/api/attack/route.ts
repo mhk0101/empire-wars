@@ -173,6 +173,18 @@ export async function POST(req: Request) {
     "🛡️",
     `${attacker.username} به تو حمله کرد — ${win ? "شکست خوردی" : "دفاع موفق"}`
   );
+
+  // ارسال اعلان به تلگرام مدافع
+  if (target.telegramId) {
+    const { sendMessage } = await import("@/game/telegram");
+    await sendMessage(
+      target.telegramId,
+      `🚨 <b>هشدار حمله!</b>\n\n` +
+        `فرمانده، بازیکن <b>${attacker.username}</b> به شهر شما حمله کرد.\n` +
+        `وضعیت نبرد: <b>${win ? "شکست در دفاع ❌" : "دفاع موفق ✅"}</b>\n\n` +
+        `همین حالا برای بررسی خسارات و انتقام وارد بازی شوید!`
+    );
+  }
   await trackMission(attacker.id, "attack", 1);
 
   const updated = await getPlayerById(attacker.id);

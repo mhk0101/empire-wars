@@ -14,11 +14,15 @@ export async function POST() {
 
   if (player.lastDailyClaim) {
     const last = new Date(player.lastDailyClaim);
-    const sameDay =
-      last.toDateString() === now.toDateString();
-    if (sameDay) {
+    // مقایسه بر اساس روز، ماه و سال UTC برای دقت ۱۰۰٪
+    const isSameDay = 
+      last.getUTCDate() === now.getUTCDate() &&
+      last.getUTCMonth() === now.getUTCMonth() &&
+      last.getUTCFullYear() === now.getUTCFullYear();
+
+    if (isSameDay) {
       return Response.json(
-        { error: "پاداش امروز را قبلاً دریافت کرده‌اید." },
+        { error: "پاداش امروز را قبلاً دریافت کرده‌اید. فردا دوباره امتحان کنید!" },
         { status: 400 }
       );
     }

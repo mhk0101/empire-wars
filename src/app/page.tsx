@@ -45,7 +45,7 @@ export default function Landing() {
 
       {/* هدر */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="text-xl font-black gold-text">👑 جنگ امپراطورها</div>
+        <div className="text-xl font-black gold-text">👑 Empire Wars</div>
         <Link
           href="/game"
           className="btn-gold rounded-xl px-4 py-2 text-sm"
@@ -56,16 +56,15 @@ export default function Landing() {
 
       {/* هیرو */}
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-10 text-center">
-        <div className="floaty mx-auto mb-6 text-7xl sm:text-8xl">🏰</div>
-        <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
-          امپراتوری خود را بساز،
+        <div className="mx-auto mb-6 text-7xl sm:text-8xl opacity-90">🏰</div>
+        <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl text-slate-100">
+          امپراتوری خود را بنا کنید و
           <br />
-          <span className="gold-text">بر سرور تسلط پیدا کن</span>
+          <span className="gold-text text-amber-400">حاکم قلمرو شوید</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base text-slate-300 sm:text-lg">
-          یک بازی استراتژیک تلگرامی به سبک Travian و OGame؛ ثروت جمع کن، اقتصادت
-          را توسعه بده، اتحاد تشکیل بده و با هزاران فرمانده دیگر بجنگ. هیچ پایانی
-          ندارد.
+        <p className="mx-auto mt-6 max-w-2xl text-base text-slate-400 sm:text-lg">
+          در دنیای جنگ امپراطورها، استراتژی شما حرف اول را می‌زند. 
+          منابع را مدیریت کنید، ارتش بسازید و با دیگران رقابت کنید.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
