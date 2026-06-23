@@ -11,6 +11,7 @@ interface Achievement {
   target: number;
   value: number;
   done: boolean;
+  claimed: boolean;
   reward: { gems?: number };
 }
 interface WorldEvent {
@@ -225,15 +226,17 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                 <span>
                   {fa(Math.min(a.value, a.target))}/{fa(a.target)}
                 </span>
-                {a.done && (
+                {a.claimed ? (
+                  <span className="text-emerald-400 font-bold">✅ دریافت شده</span>
+                ) : a.done ? (
                   <button
                     disabled={busy === a.id}
                     onClick={() => claimAch(a.id)}
                     className="btn-gold rounded px-3 py-0.5 text-[10px]"
                   >
-                    دریافت
+                    دریافت جایزه
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           ))}
@@ -251,8 +254,18 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
             </span>
             <button
               onClick={() => {
-                navigator.clipboard?.writeText(p.inviteCode);
-                notify("کد کپی شد!");
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(p.inviteCode);
+                  notify("کد کپی شد!");
+                } else {
+                  const input = document.createElement("input");
+                  input.value = p.inviteCode;
+                  document.body.appendChild(input);
+                  input.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(input);
+                  notify("کد کپی شد!");
+                }
               }}
               className="text-xs text-slate-300"
             >

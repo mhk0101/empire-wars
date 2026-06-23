@@ -22,7 +22,7 @@ export async function sendMessage(
   text: string,
   replyMarkup?: object
 ) {
-  if (!API) return;
+  if (!API || !chatId) return;
   await fetch(`${API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,6 +33,22 @@ export async function sendMessage(
       reply_markup: replyMarkup,
     }),
   }).catch(() => {});
+}
+
+// ارسال اعلان خودکار
+export async function sendNotification(playerId: number, text: string) {
+  try {
+    const { db } = await import("@/db");
+    const { players } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const user = await db.select().from(players).where(eq(players.id, playerId)).limit(1);
+    if (user.length && user[0].telegramId) {
+      await sendMessage(user[0].telegramId, text);
+    }
+  } catch (e) {
+    console.error("Failed to send telegram notification", e);
+  }
 }
 
 // پاسخ به callback (دکمه‌های شیشه‌ای)

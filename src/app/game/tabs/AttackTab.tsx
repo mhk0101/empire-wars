@@ -104,39 +104,7 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
         >
           📜 گزارش‌ها
         </button>
-        <button
-          onClick={() => setView("rules" as any)}
-          className={`flex-1 rounded-xl py-2 text-sm font-semibold ${
-            (view as any) === "rules" ? "btn-gold" : "card text-slate-300"
-          }`}
-        >
-          ⚖️ قوانین
-        </button>
       </div>
-
-      {/* قوانین و شرایط حمله */}
-      {(view as any) === "rules" && (
-        <div className="card mb-6 animate-in fade-in slide-in-from-top-2 rounded-2xl p-5 text-sm leading-relaxed text-slate-300">
-          <h3 className="mb-3 font-bold text-[#f5c542]">📜 قوانین و شرایط نبرد</h3>
-          <ul className="list-inside list-disc space-y-2">
-            <li>
-              <b className="text-slate-100">غارت منابع:</b> در صورت پیروزی، شما <span className="text-emerald-400">۲۵٪</span> از طلا، غذا و سنگ حریف را به غنیمت می‌برید.
-            </li>
-            <li>
-              <b className="text-slate-100">تلفات نبرد:</b> در هر حمله (پیروزی یا شکست)، بخشی از نیروهای هر دو طرف کشته می‌شوند. تلفات مدافع در صورت شکست بسیار سنگین‌تر است.
-            </li>
-            <li>
-              <b className="text-slate-100">سپر دفاعی:</b> بازیکنی که به او حمله شده، به مدت <span className="text-sky-400">۶ ساعت</span> تحت سپر دفاعی قرار می‌گیرد و نمی‌توان دوباره به او حمله کرد.
-            </li>
-            <li>
-              <b className="text-slate-100">شانس پیروزی:</b> شانس برد بر اساس قدرت ارتش شما در برابر قدرت دفاعی حریف (شامل نیروهای مدافع، دیوار و تحقیقات دفاعی او) محاسبه می‌شود.
-            </li>
-            <li>
-              <b className="text-slate-100">پاداش تجربه:</b> با هر حمله موفق XP دریافت می‌کنید که باعث ارتقای سطح فرماندهی شما می‌شود.
-            </li>
-          </ul>
-        </div>
-      )}
 
       {/* نتیجه آخرین حمله */}
       {result && (
@@ -148,9 +116,10 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
           }`}
         >
           <div className="text-lg font-black">
-            {result.win ? "🏆 پیروزی!" : "💀 شکست"}
+            {result.win ? "🏆 پیروزی در نبرد" : "💀 شکست در نبرد"}
           </div>
-          <p className="mt-1 text-xs text-slate-300">{result.details}</p>
+          <p className="mt-1 text-[11px] text-slate-300 leading-relaxed">{result.details}</p>
+          <div className="mt-2 text-[10px] text-slate-400">مدت زمان نبرد: ۵ دقیقه</div>
           {result.win && (
             <div className="mt-2 flex flex-wrap gap-2">
               {Object.entries(result.loot).map(([r, a]) =>

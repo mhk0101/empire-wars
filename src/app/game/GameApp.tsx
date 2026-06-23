@@ -156,7 +156,10 @@ export default function GameApp() {
               </button>
             </>
           ) : (
-            <p className="text-slate-400">در حال بارگذاری امپراتوری…</p>
+            <div className="space-y-2">
+              <p className="text-slate-200 font-bold animate-pulse">در حال بارگذاری بازی...</p>
+              <p className="text-[10px] text-slate-500">لطفاً فیلترشکن خود را روشن کنید</p>
+            </div>
           )}
         </div>
       </div>

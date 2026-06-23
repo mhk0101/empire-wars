@@ -138,16 +138,14 @@ export async function POST(req: Request) {
       } else if (data === "invite") {
         await answerCallback(cq.id);
         const url = gameUrl();
-        const link = url
-          ? `${url}/game?ref=${player.inviteCode}`
-          : `کد دعوت: ${player.inviteCode}`;
+        const link = url ? `${url}/game?ref=${player.inviteCode}` : `EmpireWarsBot?start=${player.inviteCode}`;
         await sendMessage(
           chatId,
-          `👥 <b>دعوت دوستان</b>\n\n` +
-            `کد دعوت تو: <code>${player.inviteCode}</code>\n` +
-            `تعداد دعوت موفق: ${fa(player.inviteCount)}\n\n` +
-            `هر دعوت موفق: +۵۰۰ طلا و +۲۰ جم 🎉\n\n` +
-            `لینک دعوت:\n${link}`
+          `⚔️ <b>ارتش خود را بزرگ‌تر کنید!</b>\n\n` +
+            `فرمانده عزیز، با دعوت دوستان خود به بازی <b>جنگ امپراتورها</b>، هم شما و هم دوستتان پاداش‌های ویژه‌ای دریافت خواهید کرد!\n\n` +
+            `🎁 <b>پاداش دعوت:</b> سکه و جم رایگان\n` +
+            `👥 <b>تعداد دعوت‌های شما:</b> ${fa(player.inviteCount)}\n\n` +
+            `<b>لینک اختصاصی شما برای دعوت:</b>\n<code>${link}</code>`
         );
       } else if (data === "no_url") {
         await answerCallback(cq.id, "آدرس بازی هنوز تنظیم نشده است.");
