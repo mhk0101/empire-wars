@@ -103,7 +103,7 @@ export default function InstallPrompt() {
           </div>
           <div className="flex-1">
             <div className="text-sm font-black text-slate-100">
-              Empire Wars را نصب کن!
+              جنگ امپراطورها را نصب کن!
             </div>
             <p className="mt-0.5 text-[11px] text-slate-300">
               بازی را به صفحه اصلی موبایلت اضافه کن تا مثل یک اپلیکیشن، سریع و

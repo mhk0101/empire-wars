@@ -10,7 +10,6 @@ import { isShielded } from "@/game/logic";
 import { processQueues } from "@/game/queue";
 import { logActivity } from "@/game/activity";
 import { trackMission } from "@/game/missions";
-import { sendNotification } from "@/game/telegram";
 import { db } from "@/db";
 import { players, battleReports } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -174,13 +173,6 @@ export async function POST(req: Request) {
     "🛡️",
     `${attacker.username} به تو حمله کرد — ${win ? "شکست خوردی" : "دفاع موفق"}`
   );
-  
-  // ارسال اعلان به تلگرام هدف
-  await sendNotification(
-    target.id,
-    `🛡️ <b>فرمانده هوشیار باش!</b>\n\nبازیکن <b>${attacker.username}</b> به شهر شما حمله کرد.\nوضعیت: <b>${win ? "شکست خوردی و منابع غارت شد" : "دفاع شما با موفقیت انجام شد"}</b>.\n\nبرای مشاهده گزارش کامل وارد بازی شو.`
-  );
-
   await trackMission(attacker.id, "attack", 1);
 
   const updated = await getPlayerById(attacker.id);

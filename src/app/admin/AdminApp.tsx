@@ -42,7 +42,7 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings"
+    "stats" | "players" | "payments" | "settings" | "broadcast"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
@@ -215,6 +215,7 @@ export default function AdminApp() {
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
+            ["broadcast", "📣 اطلاع‌رسانی"],
             ["settings", "⚙️ تنظیمات"],
           ].map(([id, label]) => (
             <button
@@ -467,6 +468,51 @@ export default function AdminApp() {
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* اطلاع‌رسانی */}
+        {tab === "broadcast" && (
+          <div className="space-y-4">
+            <div className="card rounded-2xl p-4">
+              <h3 className="mb-3 font-bold text-[#f5c542]">📣 ارسال پیام همگانی</h3>
+              <textarea
+                id="broadcast_msg"
+                placeholder="متن پیام شما..."
+                className="h-32 w-full rounded-xl border border-white/10 bg-[#0a0e1a] p-3 text-sm"
+              ></textarea>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={async () => {
+                    const msg = (document.getElementById("broadcast_msg") as HTMLTextAreaElement).value;
+                    const d = await api("/broadcast", { method: "POST", body: JSON.stringify({ action: "telegram", message: msg }) });
+                    setMsg(d.ok ? `پیام به ${d.sentCount} نفر در تلگرام ارسال شد.` : d.error);
+                  }}
+                  className="flex-1 rounded-xl bg-sky-600 py-2.5 text-xs font-bold"
+                >
+                  ✈️ ارسال به تلگرام
+                </button>
+                <button
+                  onClick={async () => {
+                    const msg = (document.getElementById("broadcast_msg") as HTMLTextAreaElement).value;
+                    const d = await api("/broadcast", { method: "POST", body: JSON.stringify({ action: "site", message: msg }) });
+                    setMsg(d.ok ? "اطلاعیه در سایت ثبت شد." : d.error);
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold"
+                >
+                  📱 پاپ‌آپ داخل سایت
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const d = await api("/broadcast", { method: "POST", body: JSON.stringify({ action: "clear_site" }) });
+                setMsg(d.ok ? "تمام اطلاعیه‌های سایت پاک شدند." : d.error);
+              }}
+              className="w-full rounded-xl bg-rose-900/40 py-2.5 text-xs text-rose-300"
+            >
+              🗑 پاک کردن اطلاعیه‌های فعلی سایت
+            </button>
           </div>
         )}
 

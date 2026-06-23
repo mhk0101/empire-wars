@@ -3,14 +3,14 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "👑 جنگ امپراتورها",
+  title: "👑 جنگ امپراطورها",
   description:
-    "بازی استراتژیک تلگرامی جنگ امپراتورها؛ امپراتوری خود را بساز، اقتصادت را توسعه بده، اتحاد تشکیل بده و بر سرور تسلط پیدا کن.",
+    "بازی استراتژیک تلگرامی جنگ امپراطورها؛ امپراتوری خود را بساز، اقتصادت را توسعه بده، اتحاد تشکیل بده و بر سرور تسلط پیدا کن.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Empire Wars",
+    title: "جنگ امپراطورها",
   },
   icons: {
     icon: "/icons/icon.svg",

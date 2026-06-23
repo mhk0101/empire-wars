@@ -12,12 +12,13 @@ export async function POST() {
   const player = (await syncPlayer(base.id)) ?? base;
   const now = new Date();
 
-  const todayStr = now.toISOString().slice(0, 10);
   if (player.lastDailyClaim) {
-    const lastStr = new Date(player.lastDailyClaim).toISOString().slice(0, 10);
-    if (lastStr === todayStr) {
+    const last = new Date(player.lastDailyClaim);
+    const sameDay =
+      last.toDateString() === now.toDateString();
+    if (sameDay) {
       return Response.json(
-        { error: "پاداش امروز را قبلاً دریافت کرده‌اید. فردا دوباره سر بزن!" },
+        { error: "پاداش امروز را قبلاً دریافت کرده‌اید." },
         { status: 400 }
       );
     }

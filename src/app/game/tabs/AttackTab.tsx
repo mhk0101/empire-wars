@@ -116,10 +116,9 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
           }`}
         >
           <div className="text-lg font-black">
-            {result.win ? "🏆 پیروزی در نبرد" : "💀 شکست در نبرد"}
+            {result.win ? "🏆 پیروزی!" : "💀 شکست"}
           </div>
-          <p className="mt-1 text-[11px] text-slate-300 leading-relaxed">{result.details}</p>
-          <div className="mt-2 text-[10px] text-slate-400">مدت زمان نبرد: ۵ دقیقه</div>
+          <p className="mt-1 text-xs text-slate-300">{result.details}</p>
           {result.win && (
             <div className="mt-2 flex flex-wrap gap-2">
               {Object.entries(result.loot).map(([r, a]) =>
