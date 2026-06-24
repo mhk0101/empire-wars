@@ -11,6 +11,7 @@ interface Achievement {
   target: number;
   value: number;
   done: boolean;
+  claimed: boolean;
   reward: { gems?: number };
 }
 interface WorldEvent {
@@ -225,7 +226,9 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                 <span>
                   {fa(Math.min(a.value, a.target))}/{fa(a.target)}
                 </span>
-                {a.done && (
+                {a.claimed ? (
+                  <span className="text-emerald-400">✅ دریافت شد</span>
+                ) : a.done ? (
                   <button
                     disabled={busy === a.id}
                     onClick={() => claimAch(a.id)}
@@ -233,6 +236,8 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                   >
                     دریافت
                   </button>
+                ) : (
+                  <span>در حال انجام...</span>
                 )}
               </div>
             </div>
