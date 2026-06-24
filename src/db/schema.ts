@@ -209,11 +209,3 @@ export const settings = pgTable("settings", {
   key: varchar("key", { length: 48 }).primaryKey(),
   value: text("value").notNull().default(""),
 });
-
-// ثبت دستاوردهای دریافت شده (برای جلوگیری از دریافت مجدد)
-export const achievementClaims = pgTable("achievement_claims", {
-  id: serial("id").primaryKey(),
-  playerId: integer("player_id").notNull(),
-  achievementId: varchar("achievement_id", { length: 32 }).notNull(),
-  claimedAt: timestamp("claimed_at").notNull().defaultNow(),
-});
