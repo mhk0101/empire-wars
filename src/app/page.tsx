@@ -39,7 +39,7 @@ export default function Landing() {
     <main className="min-h-screen overflow-hidden">
       {/* پس‌زمینه بهینه شده */}
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[#0a0e1a]">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a2440] to-[#0a0e1a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a2440_0%,transparent_70%)]" />
       </div>
 
       {/* هدر */}
@@ -55,7 +55,7 @@ export default function Landing() {
 
       {/* هیرو */}
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-10 text-center">
-        <div className="floaty mx-auto mb-6 text-7xl sm:text-8xl">🏰</div>
+        <div className="mx-auto mb-6 text-7xl sm:text-8xl">🏰</div>
         <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
           امپراتوری خود را بساز،
           <br />
@@ -69,7 +69,7 @@ export default function Landing() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/game"
-            className="btn-gold rounded-2xl px-8 py-4 text-lg"
+            className="btn-gold glow rounded-2xl px-8 py-4 text-lg"
           >
             🎮 شروع رایگان
           </Link>
@@ -160,7 +160,7 @@ export default function Landing() {
 
       {/* CTA پایانی */}
       <section className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <div className="card-gold card rounded-3xl p-10">
+        <div className="card-gold card glow rounded-3xl p-10">
           <h2 className="text-3xl font-black gold-text">
             آماده‌ای فرمانده شوی؟
           </h2>

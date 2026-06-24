@@ -10,17 +10,15 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const base = await getOrCreatePlayer();
   const player = (await syncPlayer(base.id)) ?? base;
-  const claimed = player.claimedAchievements || [];
 
   const achievements = ACHIEVEMENTS.map((a) => {
-    const value = (player as unknown as Record<string, any>)[a.check] ?? 0;
+    const value = (player as unknown as Record<string, number>)[a.check] ?? 0;
     return {
       id: a.id,
       title: a.title,
       target: a.target,
       value,
       done: value >= a.target,
-      claimed: claimed.includes(a.id),
       reward: a.reward,
     };
   });
@@ -41,27 +39,17 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const achId = body.achievementId as string;
   const ach = ACHIEVEMENTS.find((a) => a.id === achId);
-  
   if (!ach) return Response.json({ error: "دستاورد نامعتبر." }, { status: 400 });
 
-  const claimed = player.claimedAchievements || [];
-  if (claimed.includes(achId)) {
-    return Response.json({ error: "جایزه این دستاورد قبلاً دریافت شده است." }, { status: 400 });
-  }
-
-  const value = (player as unknown as Record<string, any>)[ach.check] ?? 0;
+  const value = (player as unknown as Record<string, number>)[ach.check] ?? 0;
   if (value < ach.target) {
-    return Response.json({ error: "هنوز این دستاورد تکمیل نشده است." }, { status: 400 });
+    return Response.json({ error: "هنوز این دستاورد تکمیل نشده." }, { status: 400 });
   }
 
   const updated = await db
     .update(players)
-    .set({ 
-      gems: player.gems + (ach.reward.gems ?? 0),
-      claimedAchievements: [...claimed, achId]
-    })
+    .set({ gems: player.gems + (ach.reward.gems ?? 0) })
     .where(eq(players.id, player.id))
     .returning();
-
   return Response.json({ player: updated[0], reward: ach.reward });
 }
