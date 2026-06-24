@@ -37,15 +37,14 @@ const loop = [
 export default function Landing() {
   return (
     <main className="min-h-screen overflow-hidden">
-      {/* پس‌زمینه */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a2440_0%,#0a0e1a_60%)]" />
-        <div className="absolute left-1/2 top-[-10%] h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#f5c542]/10 blur-[120px]" />
+      {/* پس‌زمینه بهینه شده */}
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#0a0e1a]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a2440_0%,transparent_70%)]" />
       </div>
 
       {/* هدر */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="text-xl font-black gold-text">👑 جنگ امپراطورها</div>
+        <div className="text-xl font-black gold-text">👑 Empire Wars</div>
         <Link
           href="/game"
           className="btn-gold rounded-xl px-4 py-2 text-sm"
@@ -56,7 +55,7 @@ export default function Landing() {
 
       {/* هیرو */}
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-10 text-center">
-        <div className="floaty mx-auto mb-6 text-7xl sm:text-8xl">🏰</div>
+        <div className="mx-auto mb-6 text-7xl sm:text-8xl">🏰</div>
         <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
           امپراتوری خود را بساز،
           <br />

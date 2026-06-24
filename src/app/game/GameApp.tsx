@@ -13,7 +13,6 @@ import {
 } from "@/game/client";
 import NameModal from "./NameModal";
 import InstallPrompt from "./InstallPrompt";
-import GlobalAnnouncement from "./GlobalAnnouncement";
 import HomeTab from "./tabs/HomeTab";
 import CityTab from "./tabs/CityTab";
 import TroopsTab from "./tabs/TroopsTab";
@@ -190,7 +189,7 @@ export default function GameApp() {
         <div className="mx-auto max-w-3xl px-3 py-2">
           <div className="mb-2 flex items-center justify-between">
             <Link href="/" className="text-sm font-black gold-text">
-              👑 جنگ امپراطورها
+              👑 Empire Wars
             </Link>
             <div className="flex items-center gap-2 text-xs text-slate-300">
               <button
@@ -299,9 +298,6 @@ export default function GameApp() {
 
       {/* پیشنهاد نصب روی موبایل (PWA) */}
       <InstallPrompt />
-
-      {/* اطلاعیه‌های همگانی */}
-      <GlobalAnnouncement />
 
       {/* توست */}
       {toast && (
