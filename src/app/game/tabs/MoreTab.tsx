@@ -227,7 +227,7 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                   {fa(Math.min(a.value, a.target))}/{fa(a.target)}
                 </span>
                 {a.claimed ? (
-                  <span className="text-emerald-400">✅ دریافت شد</span>
+                  <span className="text-emerald-400 font-bold">✅ دریافت شده</span>
                 ) : a.done ? (
                   <button
                     disabled={busy === a.id}
@@ -237,7 +237,7 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                     دریافت
                   </button>
                 ) : (
-                  <span>در حال انجام...</span>
+                  <span className="text-slate-500">در حال انجام…</span>
                 )}
               </div>
             </div>

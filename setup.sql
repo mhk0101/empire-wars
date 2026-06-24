@@ -155,3 +155,10 @@ CREATE TABLE IF NOT EXISTS settings (
   key varchar(48) PRIMARY KEY,
   value text NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS achievement_claims (
+  id serial PRIMARY KEY,
+  player_id integer NOT NULL,
+  achievement_id varchar(32) NOT NULL,
+  claimed_at timestamp NOT NULL DEFAULT now()
+);
