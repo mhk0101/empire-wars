@@ -209,10 +209,3 @@ export const settings = pgTable("settings", {
   key: varchar("key", { length: 48 }).primaryKey(),
   value: text("value").notNull().default(""),
 });
-export const announcements = pgTable("announcements", {
-  id: serial("id").primaryKey(),
-  message: text("message").notNull(),
-  icon: varchar("icon", { length: 8 }).notNull().default("🔔"),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
