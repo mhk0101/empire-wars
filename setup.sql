@@ -155,3 +155,11 @@ CREATE TABLE IF NOT EXISTS settings (
   key varchar(48) PRIMARY KEY,
   value text NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id serial PRIMARY KEY,
+  title varchar(128) NOT NULL,
+  message text NOT NULL,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamp NOT NULL DEFAULT now()
+);

@@ -209,3 +209,12 @@ export const settings = pgTable("settings", {
   key: varchar("key", { length: 48 }).primaryKey(),
   value: text("value").notNull().default(""),
 });
+
+// اطلاعیه‌ها و پیام‌های همگانی
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 128 }).notNull(),
+  message: text("message").notNull(),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
