@@ -42,9 +42,10 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings"
+    "stats" | "players" | "payments" | "settings" | "broadcast"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
+  const [bcForm, setBcForm] = useState({ title: "", message: "" });
   const [msg, setMsg] = useState("");
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -140,6 +141,29 @@ export default function AdminApp() {
     loadStats();
   }
 
+  async function sendBroadcast() {
+    if (!bcForm.title || !bcForm.message) {
+      setMsg("عنوان و متن الزامی است.");
+      return;
+    }
+    setMsg("در حال ارسال... ⏳");
+    const res = await fetch("/api/admin/broadcast", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-pass": pass,
+      },
+      body: JSON.stringify(bcForm),
+    });
+    const d = await res.json();
+    if (res.ok) {
+      setMsg(`ارسال شد! به ${fa(d.sentCount)} نفر پیام رفت. ✅`);
+      setBcForm({ title: "", message: "" });
+    } else {
+      setMsg("خطا: " + d.error);
+    }
+  }
+
   async function playerAction(playerId: number, action: string, extra: object = {}) {
     const d = await api("", {
       method: "POST",
@@ -215,6 +239,7 @@ export default function AdminApp() {
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
+            ["broadcast", "📢 اطلاع‌رسانی"],
             ["settings", "⚙️ تنظیمات"],
           ].map(([id, label]) => (
             <button
@@ -512,6 +537,57 @@ export default function AdminApp() {
             >
               💾 ذخیره همه تنظیمات
             </button>
+          </div>
+        )}
+
+        {/* اطلاع‌رسانی همگانی */}
+        {tab === "broadcast" && (
+          <div className="card-gold card rounded-3xl p-6">
+            <h3 className="mb-4 text-lg font-black gold-text">
+              📢 ارسال پیام همگانی
+            </h3>
+            <p className="mb-4 text-xs text-slate-400">
+              این پیام همزمان برای تمام کاربرانی که ربات را استارت کرده‌اند ارسال
+              می‌شود و در بخش اطلاعیه‌های بازی نیز ثبت می‌گردد.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">
+                  عنوان پیام
+                </label>
+                <input
+                  value={bcForm.title}
+                  onChange={(e) =>
+                    setBcForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  placeholder="مثلاً: شروع فصل جدید"
+                  className="w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-4 py-3 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">
+                  متن پیام (HTML مجاز است)
+                </label>
+                <textarea
+                  rows={6}
+                  value={bcForm.message}
+                  onChange={(e) =>
+                    setBcForm((f) => ({ ...f, message: e.target.value }))
+                  }
+                  placeholder="متن پیام خود را اینجا بنویسید..."
+                  className="w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-4 py-3 text-sm"
+                />
+              </div>
+
+              <button
+                onClick={sendBroadcast}
+                className="btn-gold w-full rounded-xl py-4 text-sm font-bold"
+              >
+                🚀 ارسال برای تمام کاربران
+              </button>
+            </div>
           </div>
         )}
       </div>
