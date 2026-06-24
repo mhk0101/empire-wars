@@ -1,7 +1,6 @@
 import { ADMIN_PASSWORD } from "@/game/config";
 import { db } from "@/db";
-import { players, announcements } from "@/db/schema";
-import { sendMessage } from "@/game/telegram";
+import { players } from "@/db/schema";import { sendMessage } from "@/game/telegram";
 import { eq, isNotNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
