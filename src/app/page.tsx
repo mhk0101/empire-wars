@@ -37,9 +37,10 @@ const loop = [
 export default function Landing() {
   return (
     <main className="min-h-screen overflow-hidden">
-      {/* پس‌زمینه بهینه شده */}
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#0a0e1a]">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a2440] to-[#0a0e1a]" />
+      {/* پس‌زمینه */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a2440_0%,#0a0e1a_60%)]" />
+        <div className="absolute left-1/2 top-[-10%] h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#f5c542]/10 blur-[120px]" />
       </div>
 
       {/* هدر */}
@@ -69,7 +70,7 @@ export default function Landing() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/game"
-            className="btn-gold rounded-2xl px-8 py-4 text-lg"
+            className="btn-gold glow rounded-2xl px-8 py-4 text-lg"
           >
             🎮 شروع رایگان
           </Link>
@@ -160,7 +161,7 @@ export default function Landing() {
 
       {/* CTA پایانی */}
       <section className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <div className="card-gold card rounded-3xl p-10">
+        <div className="card-gold card glow rounded-3xl p-10">
           <h2 className="text-3xl font-black gold-text">
             آماده‌ای فرمانده شوی؟
           </h2>
