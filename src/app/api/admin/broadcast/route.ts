@@ -2,17 +2,16 @@ import { getSettings } from "@/game/settings";
 import { db } from "@/db";
 import { players, announcements } from "@/db/schema";
 import { sendMessage } from "@/game/telegram";
-import { eq, isNotNull, sql } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 // ارسال پیام همگانی به تمام کاربرانی که ربات را استارت کرده‌اند
 export async function POST(req: Request) {
-  // رمز ادمین غیرفعال شد
-  // const s = await getSettings();
-  // if (req.headers.get("x-admin-pass") !== s.adminPassword) {
-  //   return Response.json({ error: "دسترسی غیرمجاز" }, { status: 401 });
-  // }
+  const s = await getSettings();
+  if (req.headers.get("x-admin-pass") !== s.adminPassword) {
+    return Response.json({ error: "دسترسی غیرمجاز" }, { status: 401 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || "").trim();
@@ -24,12 +23,6 @@ export async function POST(req: Request) {
 
   // ۱. ثبت در جدول اطلاعیه‌ها (برای نمایش داخل بازی)
   await db.insert(announcements).values({ title, message });
-
-  // ۱.۵. ارسال Notification داخل بازی (به همه)
-  await db.execute(sql`
-    INSERT INTO notifications (player_id, title, message, type, icon)
-    VALUES (NULL, ${title}, ${message}, 'admin', '📢')
-  `);
 
   // ۲. ارسال به تلگرام (فقط کاربرانی که telegramId دارند)
   const allPlayers = await db

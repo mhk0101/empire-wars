@@ -17,8 +17,8 @@ import { eq, desc, ilike, or, sql, count } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 async function checkAuth(req: Request): Promise<boolean> {
-  // رمز ادمین غیرفعال شد - همه دسترسی دارند
-  return true;
+  const s = await getSettings();
+  return req.headers.get("x-admin-pass") === s.adminPassword;
 }
 
 // ===== GET: داده‌های پنل =====

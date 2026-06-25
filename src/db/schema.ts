@@ -85,8 +85,6 @@ export const players = pgTable("players", {
   // زمان آخرین برداشت منابع
   lastCollect: timestamp("last_collect").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  // VIP Level (اضافه شده در migrations)
-  vipLevel: integer("vip_level").notNull().default(0),
 });
 
 // کلن‌ها
@@ -221,17 +219,5 @@ export const announcements = pgTable("announcements", {
   title: varchar("title", { length: 128 }).notNull(),
   message: text("message").notNull(),
   active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// جدول Notifications (اعلان‌های داخل بازی)
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  playerId: integer("player_id"),
-  title: varchar("title", { length: 128 }).notNull(),
-  message: text("message").notNull(),
-  type: varchar("type", { length: 16 }).notNull().default("info"),
-  icon: varchar("icon", { length: 8 }).notNull().default("📢"),
-  read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
