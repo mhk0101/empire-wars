@@ -576,121 +576,144 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function BroadcastTab({
-  api,
   setMsg,
 }: {
   api: (path: string, opts?: RequestInit) => Promise<any>;
   setMsg: (m: string) => void;
 }) {
-  const [bcTitle, setBcTitle] = useState("");
-  const [bcMsg, setBcMsg] = useState("");
-  const [dmPlayerId, setDmPlayerId] = useState("");
-  const [dmTitle, setDmTitle] = useState("");
-  const [dmMsg, setDmMsg] = useState("");
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [targetType, setTargetType] = useState<"all" | "specific">("all");
+  const [targetPlayerId, setTargetPlayerId] = useState("");
+  const [channel, setChannel] = useState<"site" | "telegram" | "both">("site");
+  const [dismissible, setDismissible] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  async function sendBroadcast() {
-    if (!bcTitle.trim() || !bcMsg.trim()) {
-      setMsg("عنوان و متن پیام همگانی را وارد کنید.");
+  async function send() {
+    if (!title.trim() || !message.trim()) {
+      setMsg("عنوان و متن پیام را وارد کنید.");
+      return;
+    }
+    if (targetType === "specific" && !targetPlayerId.trim()) {
+      setMsg("شناسه کاربر را وارد کنید.");
       return;
     }
     setBusy(true);
     try {
       const d = await fetch("/api/admin/broadcast", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "" },
-        body: JSON.stringify({ title: bcTitle, message: bcMsg }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "",
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          targetType,
+          targetPlayerId: targetType === "specific" ? Number(targetPlayerId) : null,
+          channel,
+          dismissible,
+        }),
       }).then((r) => r.json());
       if (d.error) setMsg("خطا: " + d.error);
-      else setMsg(`پیام همگانی ارسال شد ✅ (تعداد: ${d.sentCount ?? 0})`);
-      setBcTitle("");
-      setBcMsg("");
+      else setMsg(`پیام ارسال شد ✅ (تلگرام: ${d.sentCount ?? 0})`);
+      setTitle("");
+      setMessage("");
+      setTargetPlayerId("");
     } catch {
-      setMsg("خطا در ارسال پیام همگانی.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function sendDM() {
-    const pid = Number(dmPlayerId);
-    if (!pid || !dmTitle.trim() || !dmMsg.trim()) {
-      setMsg("شناسه کاربر، عنوان و متن پیام خصوصی را وارد کنید.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const d = await fetch("/api/admin/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "" },
-        body: JSON.stringify({ playerId: pid, title: dmTitle, message: dmMsg }),
-      }).then((r) => r.json());
-      if (d.error) setMsg("خطا: " + d.error);
-      else setMsg("پیام خصوصی ارسال شد ✅");
-      setDmPlayerId("");
-      setDmTitle("");
-      setDmMsg("");
-    } catch {
-      setMsg("خطا در ارسال پیام خصوصی.");
+      setMsg("خطا در ارسال پیام.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
-        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📢 ارسال پیام همگانی</h3>
-        <input
-          value={bcTitle}
-          onChange={(e) => setBcTitle(e.target.value)}
-          placeholder="عنوان پیام"
-          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-        />
-        <textarea
-          value={bcMsg}
-          onChange={(e) => setBcMsg(e.target.value)}
-          placeholder="متن پیام"
-          rows={3}
-          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-        />
-        <button
-          disabled={busy}
-          onClick={sendBroadcast}
-          className="btn-gold w-full rounded-xl py-2 text-sm"
-        >
-          ارسال همگانی
-        </button>
-      </div>
+        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📢 ارسال پیام</h3>
 
-      <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
-        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📩 ارسال پیام به کاربر خاص</h3>
+        <label className="mb-2 block text-[11px] text-slate-400">گیرنده</label>
+        <div className="mb-3 flex gap-2">
+          {[
+            ["all", "📢 همه کاربران"],
+            ["specific", "👤 کاربر خاص"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTargetType(id as "all" | "specific")}
+              className={`flex-1 rounded-lg py-2 text-xs ${
+                targetType === id
+                  ? "bg-[#f5c542] font-bold text-[#1a1206]"
+                  : "bg-[#0a0e1a] text-slate-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {targetType === "specific" && (
+          <input
+            type="number"
+            value={targetPlayerId}
+            onChange={(e) => setTargetPlayerId(e.target.value)}
+            placeholder="شناسه کاربر (ID)"
+            className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+          />
+        )}
+
+        <label className="mb-2 block text-[11px] text-slate-400">کانال ارسال</label>
+        <div className="mb-3 flex gap-2">
+          {[
+            ["site", "🌐 پاپ‌آپ سایت"],
+            ["telegram", "📱 تلگرام"],
+            ["both", "🌐+📱 هر دو"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setChannel(id as "site" | "telegram" | "both")}
+              className={`flex-1 rounded-lg py-2 text-xs ${
+                channel === id
+                  ? "bg-[#f5c542] font-bold text-[#1a1206]"
+                  : "bg-[#0a0e1a] text-slate-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {(channel === "site" || channel === "both") && (
+          <label className="mb-3 flex items-center gap-2 text-[11px] text-slate-400">
+            <input
+              type="checkbox"
+              checked={dismissible}
+              onChange={(e) => setDismissible(e.target.checked)}
+              className="rounded"
+            />
+            کاربر بتونه ببنده؟
+          </label>
+        )}
+
         <input
-          type="number"
-          value={dmPlayerId}
-          onChange={(e) => setDmPlayerId(e.target.value)}
-          placeholder="شناسه کاربر (ID)"
-          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-        />
-        <input
-          value={dmTitle}
-          onChange={(e) => setDmTitle(e.target.value)}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="عنوان پیام"
           className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
         />
         <textarea
-          value={dmMsg}
-          onChange={(e) => setDmMsg(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           placeholder="متن پیام"
           rows={3}
           className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
         />
         <button
           disabled={busy}
-          onClick={sendDM}
+          onClick={send}
           className="btn-gold w-full rounded-xl py-2 text-sm"
         >
-          ارسال پیام خصوصی
+          {busy ? "در حال ارسال…" : "ارسال پیام"}
         </button>
       </div>
     </div>

@@ -218,6 +218,23 @@ export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 128 }).notNull(),
   message: text("message").notNull(),
+  // target: all = همه | specific = یک کاربر خاص
+  targetType: varchar("target_type", { length: 16 }).notNull().default("all"),
+  targetPlayerId: integer("target_player_id"),
+  // channel: site = فقط پاپ‌آپ سایت | telegram = فقط تلگرام | both = هر دو
+  channel: varchar("channel", { length: 16 }).notNull().default("site"),
+  // آیا کاربر می‌تونه ببنده؟ (اگه false باشه فقط نمایش می‌ده)
+  dismissible: boolean("dismissible").notNull().default(true),
   active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// پیگیری وضعیت مشاهده/بستن اطلاعیه‌ها توسط هر بازیکن
+export const playerAnnouncements = pgTable("player_announcements", {
+  id: serial("id").primaryKey(),
+  playerId: integer("player_id").notNull(),
+  announcementId: integer("announcement_id").notNull(),
+  dismissed: boolean("dismissed").notNull().default(false),
+  dismissedAt: timestamp("dismissed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
