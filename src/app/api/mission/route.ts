@@ -11,16 +11,20 @@ export async function GET() {
   const base = await getOrCreatePlayer();
   const player = (await syncPlayer(base.id)) ?? base;
 
-  const claimed = player.claimedAchievements || [];
+  const claimedList = Array.isArray(player.claimedAchievements)
+    ? player.claimedAchievements
+    : [];
+
   const achievements = ACHIEVEMENTS.map((a) => {
     const value = (player as unknown as Record<string, number>)[a.check] ?? 0;
+    const claimed = claimedList.includes(a.id);
     return {
       id: a.id,
       title: a.title,
       target: a.target,
       value,
       done: value >= a.target,
-      claimed: claimed.includes(a.id),
+      claimed,
       reward: a.reward,
     };
   });
@@ -43,8 +47,10 @@ export async function POST(req: Request) {
   const ach = ACHIEVEMENTS.find((a) => a.id === achId);
   if (!ach) return Response.json({ error: "دستاورد نامعتبر." }, { status: 400 });
 
-  // بررسی اینکه قبلاً دریافت شده یا نه
-  const claimed = player.claimedAchievements || [];
+  // بررسی اینکه قبلاً دریافت شده یا نه (با امنیت کامل در برابر دریافت تکراری)
+  const claimed = Array.isArray(player.claimedAchievements)
+    ? [...player.claimedAchievements]
+    : [];
   if (claimed.includes(achId)) {
     return Response.json({ error: "جایزه این دستاورد قبلاً دریافت شده است." }, { status: 400 });
   }
@@ -62,5 +68,19 @@ export async function POST(req: Request) {
     })
     .where(eq(players.id, player.id))
     .returning();
-  return Response.json({ player: updated[0], reward: ach.reward });
+
+  // لیست دستاوردهای به‌روز شده (با وضعیت claimed صحیح)
+  const refreshed = ACHIEVEMENTS.map((a) => {
+    const v = (updated[0] as unknown as Record<string, number>)[a.check] ?? 0;
+    return {
+      id: a.id,
+      title: a.title,
+      target: a.target,
+      value: v,
+      done: v >= a.target,
+      claimed: [...claimed, achId].includes(a.id),
+      reward: a.reward,
+    };
+  });
+  return Response.json({ player: updated[0], reward: ach.reward, achievements: refreshed });
 }

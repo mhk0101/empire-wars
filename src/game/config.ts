@@ -447,6 +447,30 @@ export function armyPower(troops: Record<string, number>): number {
   return p;
 }
 
+// کلید تاریخ تقویمی یکسان برای سرور و کلاینت (بر اساس منطقه‌ی زمانی تهران)
+// با این تابع، «روز جدید» در سرور و کلاینت دقیقاً یکسان محاسبه می‌شود و
+// اختلاف منطقه‌ی زمانی باعث باگ در پاداش روزانه نمی‌شود.
+export function dayKey(date: Date = new Date()): string {
+  // en-CA قالب YYYY-MM-DD می‌دهد
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tehran",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+// آیا دو زمان در یک روز تقویمی (تهران) هستند؟
+export function isSameDay(a: Date, b: Date = new Date()): boolean {
+  return dayKey(a) === dayKey(b);
+}
+
+// آیا تاریخ a مربوط به دیروز (تهران) است؟
+export function isYesterday(a: Date, now: Date = new Date()): boolean {
+  const yesterday = new Date(now.getTime() - 86_400_000);
+  return dayKey(a) === dayKey(yesterday);
+}
+
 // ===== سیستم XP و سطح =====
 // XP لازم برای رسیدن به سطح بعدی
 export function xpForLevel(level: number): number {

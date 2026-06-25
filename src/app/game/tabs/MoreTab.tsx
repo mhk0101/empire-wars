@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DAILY_REWARDS, INVITE_MILESTONES } from "@/game/config";
+import { DAILY_REWARDS, INVITE_MILESTONES, dayKey } from "@/game/config";
 import { fa, getJSON, post } from "@/game/client";
 import type { TabProps } from "../GameApp";
 
@@ -82,9 +82,9 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
     }
   }
 
+  // بررسی «امروز دریافت شده» با همان کلید تاریخ سازگار با سرور (تهران)
   const claimedToday =
-    p.lastDailyClaim &&
-    new Date(p.lastDailyClaim).toDateString() === new Date().toDateString();
+    !!p.lastDailyClaim && dayKey(new Date(p.lastDailyClaim)) === dayKey();
 
   async function claimDaily() {
     setBusy("daily");
@@ -108,8 +108,12 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
       const res = await post("/api/mission", { achievementId: id });
       setPlayer(res.player);
       notify(`دستاورد دریافت شد! +${fa(res.reward.gems)} 💎`);
-      const d = await getJSON("/api/mission");
-      setAchievements(d.achievements);
+      if (res.achievements) {
+        setAchievements(res.achievements);
+      } else {
+        const d = await getJSON("/api/mission");
+        setAchievements(d.achievements);
+      }
     } catch (e) {
       notify((e as Error).message, false);
     } finally {
@@ -131,7 +135,7 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
     }
   }
 
-  const streakDay = claimedToday ? ((p.dailyStreak % 7) + 1) : (p.dailyStreak || 1);
+  const streakDay = ((p.dailyStreak - (claimedToday ? 1 : 0)) % 7) + 1;
 
   return (
     <div className="space-y-6">
@@ -227,16 +231,20 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                   {fa(Math.min(a.value, a.target))}/{fa(a.target)}
                 </span>
                 {a.claimed ? (
-                  <span className="text-emerald-400">✅ دریافت شد</span>
+                  <span className="rounded bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                    ✅ دریافت شده
+                  </span>
                 ) : a.done ? (
                   <button
                     disabled={busy === a.id}
                     onClick={() => claimAch(a.id)}
                     className="btn-gold rounded px-3 py-0.5 text-[10px]"
                   >
-                    دریافت
+                    {busy === a.id ? "…" : "دریافت"}
                   </button>
-                ) : null}
+                ) : (
+                  <span className="text-slate-500">قفل</span>
+                )}
               </div>
             </div>
           ))}

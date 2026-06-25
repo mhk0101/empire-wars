@@ -1,27 +1,63 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="38%" r="70%">
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a2440"/>
       <stop offset="100%" stop-color="#0a0e1a"/>
-    </radialGradient>
+    </linearGradient>
     <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fbe089"/>
-      <stop offset="55%" stop-color="#f5c542"/>
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="45%" stop-color="#f5c542"/>
       <stop offset="100%" stop-color="#c9971f"/>
     </linearGradient>
+    <linearGradient id="goldDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0b034"/>
+      <stop offset="100%" stop-color="#9a7417"/>
+    </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
-  <circle cx="256" cy="200" r="150" fill="#f5c542" opacity="0.10"/>
-  <!-- تاج -->
-  <g transform="translate(256,270)">
-    <path d="M-140,40 L-110,-90 L-55,-10 L0,-120 L55,-10 L110,-90 L140,40 Z"
-          fill="url(#gold)" stroke="#8a6914" stroke-width="6" stroke-linejoin="round"/>
-    <rect x="-150" y="40" width="300" height="55" rx="14" fill="url(#gold)" stroke="#8a6914" stroke-width="6"/>
-    <circle cx="-110" cy="-90" r="18" fill="#fff3c4"/>
-    <circle cx="0" cy="-120" r="20" fill="#fff3c4"/>
-    <circle cx="110" cy="-90" r="18" fill="#fff3c4"/>
-    <circle cx="-70" cy="68" r="11" fill="#b5161a"/>
-    <circle cx="0" cy="68" r="13" fill="#1f6fb5"/>
-    <circle cx="70" cy="68" r="11" fill="#1f8a3b"/>
+
+  <!-- background -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- subtle decorative ring -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#f5c542" stroke-opacity="0.08" stroke-width="3"/>
+
+  <!-- Crown -->
+  <g transform="translate(256,256)">
+    <!-- crown base band -->
+    <rect x="-130" y="58" width="260" height="56" rx="14" fill="url(#gold)"/>
+    <rect x="-130" y="58" width="260" height="16" rx="8" fill="#fde68a" fill-opacity="0.5"/>
+
+    <!-- crown body / peaks -->
+    <path d="M -130 62
+             L -130 -40
+             L -78 18
+             L -26 -86
+             L 0 -40
+             L 26 -86
+             L 78 18
+             L 130 -40
+             L 130 62 Z"
+          fill="url(#gold)"
+          stroke="url(#goldDark)" stroke-width="3" stroke-linejoin="round"/>
+
+    <!-- shadow under peaks -->
+    <path d="M -78 18 L -26 -86 L 0 -40 L 26 -86 L 78 18 Z"
+          fill="#000" fill-opacity="0.06"/>
+
+    <!-- gem on center peak -->
+    <circle cx="0" cy="-30" r="16" fill="#ef4444" stroke="#fff" stroke-width="2.5"/>
+    <circle cx="-4" cy="-34" r="5" fill="#fff" fill-opacity="0.7"/>
+
+    <!-- gems on band -->
+    <circle cx="-78" cy="86" r="11" fill="#3b82f6"/>
+    <circle cx="0" cy="86" r="11" fill="#10b981"/>
+    <circle cx="78" cy="86" r="11" fill="#3b82f6"/>
+
+    <!-- side peak orbs -->
+    <circle cx="-130" cy="-46" r="14" fill="url(#gold)"/>
+    <circle cx="130" cy="-46" r="14" fill="url(#gold)"/>
+
+    <!-- highlight on band -->
+    <rect x="-110" y="92" width="220" height="6" rx="3" fill="#fff" fill-opacity="0.18"/>
   </g>
 </svg>

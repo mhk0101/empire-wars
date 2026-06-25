@@ -42,7 +42,7 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "broadcast" | "settings"
+    "stats" | "players" | "payments" | "settings" | "announce"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
@@ -54,6 +54,14 @@ export default function AdminApp() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  // فرم اطلاع‌رسانی
+  const [annTarget, setAnnTarget] = useState<"all" | "user">("all");
+  const [annTitle, setAnnTitle] = useState("");
+  const [annMessage, setAnnMessage] = useState("");
+  const [annUser, setAnnUser] = useState("");
+  const [annInApp, setAnnInApp] = useState(true); // پاپ‌آپ داخل بازی
+  const [annTelegram, setAnnTelegram] = useState(false); // پیام تلگرام
+  const [sending, setSending] = useState(false);
 
   const api = useCallback(
     async (path: string, opts: RequestInit = {}) => {
@@ -140,6 +148,62 @@ export default function AdminApp() {
     loadStats();
   }
 
+  // ارسال پیام همگانی یا اختصاصی — با انتخاب کانال (داخل بازی / تلگرام)
+  async function sendAnnouncement() {
+    if (!annTitle.trim() || !annMessage.trim()) {
+      setMsg("عنوان و متن پیام الزامی است.");
+      return;
+    }
+    if (annTarget === "user" && !annUser.trim()) {
+      setMsg("نام کاربری گیرنده را وارد کنید.");
+      return;
+    }
+    if (!annInApp && !annTelegram) {
+      setMsg("حداقل یک روش ارسال را انتخاب کنید.");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/broadcast", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-pass": pass,
+        },
+        body: JSON.stringify({
+          title: annTitle.trim(),
+          message: annMessage.trim(),
+          target: annTarget,
+          username: annUser.trim() || undefined,
+          channels: { inApp: annInApp, telegram: annTelegram },
+        }),
+      });
+      const d = await res.json();
+      if (d.error) {
+        setMsg("خطا: " + d.error);
+        return;
+      }
+      // ساخت گزارش خوانا از روش و تعداد ارسال
+      const parts: string[] = [];
+      if (d.inAppDelivered === -1) parts.push("پاپ‌آپ برای همه");
+      else if (d.inAppDelivered > 0) parts.push(`پاپ‌آپ برای «${d.target}»`);
+      if (d.telegramSent > 0) parts.push(`${d.telegramSent} پیام تلگرام`);
+      if (d.telegramSkipped > 0)
+        parts.push(`${d.telegramSkipped} کاربر بدون تلگرام`);
+      const summary = parts.length ? parts.join(" • ") : "ارسال شد";
+      setMsg(`✅ ${summary}`);
+      if (!d.error) {
+        setAnnTitle("");
+        setAnnMessage("");
+        if (d.mode === "user") setAnnUser("");
+      }
+    } catch {
+      setMsg("خطا در ارسال پیام.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   async function playerAction(playerId: number, action: string, extra: object = {}) {
     const d = await api("", {
       method: "POST",
@@ -210,12 +274,12 @@ export default function AdminApp() {
         )}
 
         {/* تب‌ها */}
-        <div className="mb-4 flex gap-2 flex-wrap">
+        <div className="mb-4 flex gap-2">
           {[
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
-            ["broadcast", "📢 اطلاع‌رسانی"],
+            ["announce", "📣 اطلاع‌رسانی"],
             ["settings", "⚙️ تنظیمات"],
           ].map(([id, label]) => (
             <button
@@ -471,9 +535,125 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* اطلاع‌رسانی */}
-        {tab === "broadcast" && (
-          <BroadcastTab api={api} setMsg={setMsg} />
+        {/* اطلاع‌رسانی: پیام قابل‌پیکربندی */}
+        {tab === "announce" && (
+          <div className="space-y-4">
+            {/* گام ۱: گیرنده — همه یا یک کاربر خاص */}
+            <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+              <h3 className="mb-3 text-xs font-bold text-[#f5c542]">
+                ۱) گیرنده پیام
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setAnnTarget("all")}
+                  className={`rounded-xl py-2.5 text-xs font-bold ${
+                    annTarget === "all"
+                      ? "btn-gold"
+                      : "card text-slate-300"
+                  }`}
+                >
+                  📢 همه‌ی بازیکنان
+                </button>
+                <button
+                  onClick={() => setAnnTarget("user")}
+                  className={`rounded-xl py-2.5 text-xs font-bold ${
+                    annTarget === "user"
+                      ? "btn-gold"
+                      : "card text-slate-300"
+                  }`}
+                >
+                  📨 یک کاربر خاص
+                </button>
+              </div>
+              {annTarget === "user" && (
+                <label className="mt-3 block text-[11px] text-slate-400">
+                  نام کاربری گیرنده
+                  <input
+                    value={annUser}
+                    onChange={(e) => setAnnUser(e.target.value)}
+                    placeholder="مثلاً: سردار_۱۲۳۴"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* گام ۲: روش ارسال — داخل بازی / تلگرام */}
+            <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+              <h3 className="mb-3 text-xs font-bold text-[#f5c542]">
+                ۲) روش ارسال (انتخاب کنید)
+              </h3>
+              <div className="space-y-2">
+                <ChannelToggle
+                  active={annInApp}
+                  onClick={() => setAnnInApp((v) => !v)}
+                  icon="📱"
+                  title="پاپ‌آپ داخل بازی"
+                  desc={
+                    annTarget === "all"
+                      ? "برای همه به‌صورت پاپ‌آپ نمایش داده می‌شود (تا کاربر ببندد)."
+                      : "فقط برای این کاربر به‌صورت پاپ‌آپ نمایش داده می‌شود."
+                  }
+                />
+                <ChannelToggle
+                  active={annTelegram}
+                  onClick={() => setAnnTelegram((v) => !v)}
+                  icon="✈️"
+                  title="پیام تلگرام"
+                  desc={
+                    annTarget === "all"
+                      ? "به همه‌ی کاربرانی که ربات را استارت کرده‌اند ارسال می‌شود."
+                      : "به تلگرام این کاربر ارسال می‌شود (اگر متصل باشد)."
+                  }
+                />
+              </div>
+              {!annInApp && !annTelegram && (
+                <p className="mt-2 text-[11px] text-rose-400">
+                  حداقل یک روش ارسال را فعال کنید.
+                </p>
+              )}
+            </div>
+
+            {/* گام ۳: محتوای پیام */}
+            <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4 space-y-3">
+              <h3 className="text-xs font-bold text-[#f5c542]">
+                ۳) محتوای پیام
+              </h3>
+              <label className="block text-[11px] text-slate-400">
+                عنوان پیام
+                <input
+                  value={annTitle}
+                  onChange={(e) => setAnnTitle(e.target.value)}
+                  placeholder="موضوع پیام"
+                  maxLength={120}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm text-slate-100"
+                />
+              </label>
+
+              <label className="block text-[11px] text-slate-400">
+                متن پیام
+                <textarea
+                  value={annMessage}
+                  onChange={(e) => setAnnMessage(e.target.value)}
+                  placeholder="متن پیام خود را بنویسید…"
+                  rows={5}
+                  className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm text-slate-100"
+                />
+              </label>
+
+              <button
+                onClick={sendAnnouncement}
+                disabled={sending}
+                className="btn-gold w-full rounded-xl py-3 text-sm"
+              >
+                {sending
+                  ? "در حال ارسال…"
+                  : annTarget === "all"
+                    ? "📢 ارسال پیام"
+                    : "📨 ارسال پیام"}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* تنظیمات */}
@@ -575,147 +755,44 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BroadcastTab({
-  setMsg,
+// دکمه‌ی انتخاب روش ارسال (کانال) — قابل روشن/خاموش
+function ChannelToggle({
+  active,
+  onClick,
+  icon,
+  title,
+  desc,
 }: {
-  api: (path: string, opts?: RequestInit) => Promise<any>;
-  setMsg: (m: string) => void;
+  active: boolean;
+  onClick: () => void;
+  icon: string;
+  title: string;
+  desc: string;
 }) {
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
-  const [targetType, setTargetType] = useState<"all" | "specific">("all");
-  const [targetPlayerId, setTargetPlayerId] = useState("");
-  const [channel, setChannel] = useState<"site" | "telegram" | "both">("site");
-  const [dismissible, setDismissible] = useState(true);
-  const [busy, setBusy] = useState(false);
-
-  async function send() {
-    if (!title.trim() || !message.trim()) {
-      setMsg("عنوان و متن پیام را وارد کنید.");
-      return;
-    }
-    if (targetType === "specific" && !targetPlayerId.trim()) {
-      setMsg("شناسه کاربر را وارد کنید.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const d = await fetch("/api/admin/broadcast", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "",
-        },
-        body: JSON.stringify({
-          title,
-          message,
-          targetType,
-          targetPlayerId: targetType === "specific" ? Number(targetPlayerId) : null,
-          channel,
-          dismissible,
-        }),
-      }).then((r) => r.json());
-      if (d.error) setMsg("خطا: " + d.error);
-      else setMsg(`پیام ارسال شد ✅ (تلگرام: ${d.sentCount ?? 0})`);
-      setTitle("");
-      setMessage("");
-      setTargetPlayerId("");
-    } catch {
-      setMsg("خطا در ارسال پیام.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
-        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📢 ارسال پیام</h3>
-
-        <label className="mb-2 block text-[11px] text-slate-400">گیرنده</label>
-        <div className="mb-3 flex gap-2">
-          {[
-            ["all", "📢 همه کاربران"],
-            ["specific", "👤 کاربر خاص"],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setTargetType(id as "all" | "specific")}
-              className={`flex-1 rounded-lg py-2 text-xs ${
-                targetType === id
-                  ? "bg-[#f5c542] font-bold text-[#1a1206]"
-                  : "bg-[#0a0e1a] text-slate-300"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {targetType === "specific" && (
-          <input
-            type="number"
-            value={targetPlayerId}
-            onChange={(e) => setTargetPlayerId(e.target.value)}
-            placeholder="شناسه کاربر (ID)"
-            className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-          />
-        )}
-
-        <label className="mb-2 block text-[11px] text-slate-400">کانال ارسال</label>
-        <div className="mb-3 flex gap-2">
-          {[
-            ["site", "🌐 پاپ‌آپ سایت"],
-            ["telegram", "📱 تلگرام"],
-            ["both", "🌐+📱 هر دو"],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setChannel(id as "site" | "telegram" | "both")}
-              className={`flex-1 rounded-lg py-2 text-xs ${
-                channel === id
-                  ? "bg-[#f5c542] font-bold text-[#1a1206]"
-                  : "bg-[#0a0e1a] text-slate-300"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {(channel === "site" || channel === "both") && (
-          <label className="mb-3 flex items-center gap-2 text-[11px] text-slate-400">
-            <input
-              type="checkbox"
-              checked={dismissible}
-              onChange={(e) => setDismissible(e.target.checked)}
-              className="rounded"
-            />
-            کاربر بتونه ببنده؟
-          </label>
-        )}
-
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="عنوان پیام"
-          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-        />
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="متن پیام"
-          rows={3}
-          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
-        />
-        <button
-          disabled={busy}
-          onClick={send}
-          className="btn-gold w-full rounded-xl py-2 text-sm"
-        >
-          {busy ? "در حال ارسال…" : "ارسال پیام"}
-        </button>
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-right transition ${
+        active
+          ? "border-[#f5c542]/50 bg-[#f5c542]/10"
+          : "border-white/10 bg-[#0a0e1a]"
+      }`}
+    >
+      <span className="text-2xl">{icon}</span>
+      <span className="flex-1">
+        <span className="block text-xs font-bold text-slate-100">{title}</span>
+        <span className="block text-[10px] leading-snug text-slate-400">
+          {desc}
+        </span>
+      </span>
+      <span
+        className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${
+          active ? "bg-[#f5c542] text-[#0a0e1a]" : "bg-white/10 text-slate-500"
+        }`}
+      >
+        {active ? "✓" : ""}
+      </span>
+    </button>
   );
 }

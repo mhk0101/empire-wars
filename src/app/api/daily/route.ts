@@ -4,6 +4,7 @@ import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logActivity } from "@/game/activity";
 import { getSettings } from "@/game/settings";
+import { isSameDay, isYesterday } from "@/game/config";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +15,8 @@ export async function POST() {
 
   if (player.lastDailyClaim) {
     const last = new Date(player.lastDailyClaim);
-    const sameDay =
-      last.toDateString() === now.toDateString();
-    if (sameDay) {
+    // بررسی «امروز دریافت شده» با کلید تاریخ سازگار سرور/کلاینت (تهران)
+    if (isSameDay(last, now)) {
       return Response.json(
         { error: "پاداش امروز را قبلاً دریافت کرده‌اید." },
         { status: 400 }
@@ -26,13 +26,9 @@ export async function POST() {
 
   // محاسبه streak دقیق و بدون باگ
   let streak = player.dailyStreak;
-  const todayStr = now.toISOString().slice(0, 10);
-  const yesterday = new Date(now.getTime() - 86_400_000);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
   if (player.lastDailyClaim) {
-    const lastDateStr = new Date(player.lastDailyClaim).toISOString().slice(0, 10);
-    if (lastDateStr === yesterdayStr) {
+    if (isYesterday(new Date(player.lastDailyClaim), now)) {
       streak = (streak % 7) + 1; // ادامه استریک تا ۷ روز
     } else {
       streak = 1; // ریست استریک اگر یک روز جا افتاده باشد

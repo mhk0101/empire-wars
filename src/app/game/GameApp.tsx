@@ -13,7 +13,8 @@ import {
 } from "@/game/client";
 import NameModal from "./NameModal";
 import InstallPrompt from "./InstallPrompt";
-import AnnouncementPopup from "./AnnouncementPopup";
+import GlobalAnnouncement from "./GlobalAnnouncement";
+import NotificationPopup from "./NotificationPopup";
 import HomeTab from "./tabs/HomeTab";
 import CityTab from "./tabs/CityTab";
 import TroopsTab from "./tabs/TroopsTab";
@@ -88,15 +89,6 @@ export default function GameApp() {
     getDeviceToken();
     refresh();
   }, [refresh]);
-
-  // اگر بعد ۱۲ ثانیه هنوز داده نیامده، خطای timeout نشان بده
-  useEffect(() => {
-    if (data) return;
-    const t = setTimeout(() => {
-      setLoadError((prev) => prev || "سرور کند است؛ لطفاً صبر کنید یا دوباره تلاش کنید.");
-    }, 12000);
-    return () => clearTimeout(t);
-  }, [data]);
 
   // به‌روزرسانی منابع هر ۳۰ ثانیه (interval فقط یک‌بار ساخته می‌شود)
   useEffect(() => {
@@ -309,8 +301,9 @@ export default function GameApp() {
       {/* پیشنهاد نصب روی موبایل (PWA) */}
       <InstallPrompt />
 
-      {/* پاپ‌آپ اطلاعیه‌ها */}
-      <AnnouncementPopup />
+      {/* اطلاعیه همگانی و پیام اختصاصی ادمین */}
+      <GlobalAnnouncement />
+      <NotificationPopup />
 
       {/* توست */}
       {toast && (
