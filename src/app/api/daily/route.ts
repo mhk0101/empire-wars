@@ -24,24 +24,18 @@ export async function POST() {
     }
   }
 
-  // محاسبه streak دقیق و بدون باگ
+  // محاسبه streak
   let streak = player.dailyStreak;
-  const todayStr = now.toISOString().slice(0, 10);
-  const yesterday = new Date(now.getTime() - 86_400_000);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
   if (player.lastDailyClaim) {
-    const lastDateStr = new Date(player.lastDailyClaim).toISOString().slice(0, 10);
-    if (lastDateStr === yesterdayStr) {
-      streak = (streak % 7) + 1; // ادامه استریک تا ۷ روز
-    } else {
-      streak = 1; // ریست استریک اگر یک روز جا افتاده باشد
-    }
+    const last = new Date(player.lastDailyClaim);
+    const diffDays = Math.floor(
+      (now.getTime() - last.getTime()) / 86_400_000
+    );
+    streak = diffDays === 1 ? streak + 1 : 1;
   } else {
-    streak = 1; // اولین بار
+    streak = 1;
   }
-
-  const dayIndex = streak;
+  const dayIndex = ((streak - 1) % 7) + 1;
 
   // پاداش روزانه از تنظیمات
   const s = await getSettings();
@@ -58,9 +52,17 @@ export async function POST() {
       dailyStreak: streak,
       lastDailyClaim: now,
       totalGoldEarned: player.totalGoldEarned + reward.gold,
+      // ثبت در لاگ فعالیت
+      xp: player.xp + 10,
     })
     .where(eq(players.id, player.id))
     .returning();
+
+  await logActivity(
+    player.id,
+    "🎁",
+    `پاداش روز ${dayIndex} دریافت شد (${reward.gold || reward.gems} ${reward.gold ? "طلا" : "جم"})`
+  );
 
   await logActivity(
     player.id,

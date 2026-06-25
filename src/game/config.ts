@@ -258,19 +258,26 @@ export const RESEARCH: Record<ResearchKey, ResearchDef> = {
   },
 };
 
-// بسته‌های جم در فروشگاه
+// بسته‌های جم اصلاح‌شده
 export const GEM_PACKS = [
-  { id: "pack_starter", gems: 200, price: "۴۹٬۰۰۰ تومان", priceRaw: "49000", bonus: 0, isStarter: true, label: "بسته شروع (یکبار)" },
-  { id: "pack_100", gems: 100, price: "۵۹٬۰۰۰ تومان", priceRaw: "59000", bonus: 0 },
-  { id: "pack_500", gems: 500, price: "۲۴۹٬۰۰۰ تومان", priceRaw: "249000", bonus: 25 },
-  { id: "pack_1200", gems: 1200, price: "۴۹۹٬۰۰۰ تومان", priceRaw: "499000", bonus: 100 },
+  { gems: 100, price: "۵۹,۰۰۰ تومان", priceRaw: "59000", bonus: 0 },
+  { gems: 500, price: "۲۴۹,۰۰۰ تومان", priceRaw: "249000", bonus: 0 },
+  { gems: 1200, price: "۴۹۹,۰۰۰ تومان", priceRaw: "499000", bonus: 0 },
 ];
 
-// اسکین‌های ظاهری
-export const COSMETIC_SKINS = [
-  { id: "golden_castle", name: "قلعه طلایی", gems: 500 },
-  { id: "ice_castle", name: "قلعه یخی", gems: 500 },
-  { id: "royal_banner", name: "پرچم سلطنتی", gems: 200 },
+export const STARTER_PACK = {
+  price: "۴۹,۰۰۰ تومان",
+  priceRaw: "49000",
+  gems: 200,
+  gold: 5000,
+};
+
+// پاداش‌های پلکانی دعوت (تعداد دعوت → جایزه)
+export const INVITE_MILESTONES = [
+  { count: 5, gems: 50, label: "۵ دعوت = ۵۰ جم" },
+  { count: 10, gems: 100, label: "۱۰ دعوت = ۱۰۰ جم" },
+  { count: 20, gems: 250, label: "۲۰ دعوت = ۲۵۰ جم" },
+  { count: 50, gems: 1000, label: "۵۰ دعوت = ۱۰۰۰ جم" },
 ];
 
 // ===== تنظیمات پرداخت (این‌ها را با اطلاعات خودت عوض کن) =====
@@ -326,12 +333,7 @@ export const SKINS: SkinDef[] = [
   { id: "phoenix", name: "ققنوس", emoji: "🔥", type: "profile", price: 300 },
 ];
 
-// پاداش‌های پلکانی دعوت (تعداد دعوت → جایزه)
-export const INVITE_MILESTONES = [
-  { count: 5, gems: 50, label: "۵ دعوت = ۵۰ جم" },
-  { count: 10, gems: 150, label: "۱۰ دعوت = ۱۵۰ جم" },
-  { count: 20, gems: 400, label: "۲۰ دعوت = اسکین ویژه + ۴۰۰ جم" },
-];
+
 
 // دستاوردها
 export const ACHIEVEMENTS = [
