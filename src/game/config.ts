@@ -260,17 +260,9 @@ export const RESEARCH: Record<ResearchKey, ResearchDef> = {
 
 // بسته‌های جم در فروشگاه
 export const GEM_PACKS = [
-  { id: "pack_starter", gems: 200, price: "۴۹٬۰۰۰ تومان", priceRaw: "49000", bonus: 0, isStarter: true, label: "بسته شروع (یکبار)" },
-  { id: "pack_100", gems: 100, price: "۵۹٬۰۰۰ تومان", priceRaw: "59000", bonus: 0 },
-  { id: "pack_500", gems: 500, price: "۲۴۹٬۰۰۰ تومان", priceRaw: "249000", bonus: 25 },
-  { id: "pack_1200", gems: 1200, price: "۴۹۹٬۰۰۰ تومان", priceRaw: "499000", bonus: 100 },
-];
-
-// اسکین‌های ظاهری
-export const COSMETIC_SKINS = [
-  { id: "golden_castle", name: "قلعه طلایی", gems: 500 },
-  { id: "ice_castle", name: "قلعه یخی", gems: 500 },
-  { id: "royal_banner", name: "پرچم سلطنتی", gems: 200 },
+  { gems: 100, price: "۹۹٬۰۰۰ تومان", priceRaw: "99000", bonus: 0 },
+  { gems: 500, price: "۳۹۹٬۰۰۰ تومان", priceRaw: "399000", bonus: 50 },
+  { gems: 1000, price: "۶۹۹٬۰۰۰ تومان", priceRaw: "699000", bonus: 200 },
 ];
 
 // ===== تنظیمات پرداخت (این‌ها را با اطلاعات خودت عوض کن) =====

@@ -24,26 +24,20 @@ export async function POST() {
     }
   }
 
-  // محاسبه streak دقیق و بدون باگ
+  // محاسبه streak
   let streak = player.dailyStreak;
-  const todayStr = now.toISOString().slice(0, 10);
-  const yesterday = new Date(now.getTime() - 86_400_000);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
   if (player.lastDailyClaim) {
-    const lastDateStr = new Date(player.lastDailyClaim).toISOString().slice(0, 10);
-    if (lastDateStr === yesterdayStr) {
-      streak = (streak % 7) + 1; // ادامه استریک تا ۷ روز
-    } else {
-      streak = 1; // ریست استریک اگر یک روز جا افتاده باشد
-    }
+    const last = new Date(player.lastDailyClaim);
+    const diffDays = Math.floor(
+      (now.getTime() - last.getTime()) / 86_400_000
+    );
+    streak = diffDays === 1 ? streak + 1 : 1;
   } else {
-    streak = 1; // اولین بار
+    streak = 1;
   }
+  const dayIndex = ((streak - 1) % 7) + 1;
 
-  const dayIndex = streak;
-
-  // پاداش روزانه از تنظیمات
+  // پاداش روزانه از تنظیمات (قابل تغییر از پنل ادمین)
   const s = await getSettings();
   const reward =
     dayIndex === 7
