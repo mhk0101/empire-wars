@@ -37,7 +37,7 @@ export async function POST() {
   }
   const dayIndex = ((streak - 1) % 7) + 1;
 
-  // پاداش روزانه از تنظیمات
+  // پاداش روزانه از تنظیمات (قابل تغییر از پنل ادمین)
   const s = await getSettings();
   const reward =
     dayIndex === 7
@@ -52,17 +52,9 @@ export async function POST() {
       dailyStreak: streak,
       lastDailyClaim: now,
       totalGoldEarned: player.totalGoldEarned + reward.gold,
-      // ثبت در لاگ فعالیت
-      xp: player.xp + 10,
     })
     .where(eq(players.id, player.id))
     .returning();
-
-  await logActivity(
-    player.id,
-    "🎁",
-    `پاداش روز ${dayIndex} دریافت شد (${reward.gold || reward.gems} ${reward.gold ? "طلا" : "جم"})`
-  );
 
   await logActivity(
     player.id,
