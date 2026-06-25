@@ -15,14 +15,16 @@ import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-const MAX_BUILD_QUEUE = 2; // حداکثر کارهای هم‌زمان ساخت
-
 export async function POST(req: Request) {
   const base = await getOrCreatePlayer();
   await processQueues(base.id);
   const player = (await syncPlayer(base.id)) ?? base;
   const body = await req.json().catch(() => ({}));
   const key = body.key as BuildingKey;
+
+  // بالانس صف ساخت: عادی ۱، VIP ۲
+  const isVip = !!player.vipUntil && new Date(player.vipUntil) > new Date();
+  const maxBuildQueue = isVip ? 2 : 1;
 
   if (!key || !BUILDINGS[key]) {
     return Response.json({ error: "ساختمان نامعتبر است." }, { status: 400 });
@@ -38,20 +40,22 @@ export async function POST(req: Request) {
     );
   }
 
-  // بررسی صف: نباید این ساختمان از قبل در صف باشد
+  // بررسی صف
   const queued = await db
     .select()
     .from(buildQueue)
     .where(eq(buildQueue.playerId, player.id));
+
   if (queued.some((q) => q.building === key)) {
     return Response.json(
       { error: "این ساختمان هم‌اکنون در حال ارتقا است." },
       { status: 400 }
     );
   }
-  if (queued.length >= MAX_BUILD_QUEUE) {
+
+  if (queued.length >= maxBuildQueue) {
     return Response.json(
-      { error: `حداکثر ${MAX_BUILD_QUEUE} ساخت هم‌زمان مجاز است.` },
+      { error: isVip ? "صف ساخت VIP پر است (حداکثر ۲)." : "برای داشتن ۲ صف ساخت همزمان، اکانت خود را VIP کنید." },
       { status: 400 }
     );
   }

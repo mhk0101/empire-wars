@@ -42,12 +42,9 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings" | "broadcast"
+    "stats" | "players" | "payments" | "settings"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
-  const [bcTitle, setBcTitle] = useState("");
-  const [bcMessage, setBcMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
   const [msg, setMsg] = useState("");
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -219,7 +216,6 @@ export default function AdminApp() {
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
             ["settings", "⚙️ تنظیمات"],
-            ["broadcast", "📢 پیام"],
           ].map(([id, label]) => (
             <button
               key={id}
@@ -516,71 +512,6 @@ export default function AdminApp() {
             >
               💾 ذخیره همه تنظیمات
             </button>
-          </div>
-        )}
-
-        {/* اطلاع‌رسانی همگانی */}
-        {tab === "broadcast" && (
-          <div className="card rounded-3xl bg-[#121a2e] p-6">
-            <h3 className="mb-4 text-lg font-black gold-text">
-              📢 ارسال پیام همگانی
-            </h3>
-            <p className="mb-4 text-xs text-slate-400">
-              این پیام به تمام کاربرانی که ربات تلگرام را استارت کرده‌اند ارسال
-              می‌شود و در بخش اطلاعیه‌های بازی ثبت می‌گردد.
-            </p>
-
-            <div className="space-y-4">
-              <input
-                value={bcTitle}
-                onChange={(e) => setBcTitle(e.target.value)}
-                placeholder="عنوان پیام (مثلاً: آپدیت جدید)"
-                className="w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-4 py-3"
-              />
-              <textarea
-                value={bcMessage}
-                onChange={(e) => setBcMessage(e.target.value)}
-                placeholder="متن پیام شما..."
-                rows={5}
-                className="w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-4 py-3"
-              />
-              <button
-                disabled={isSending || !bcTitle || !bcMessage}
-                onClick={async () => {
-                  if (!confirm("آیا از ارسال پیام به همه اطمینان دارید؟"))
-                    return;
-                  setIsSending(true);
-                  try {
-                    const res = await fetch("/api/admin/broadcast", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        "x-admin-pass": pass,
-                      },
-                      body: JSON.stringify({
-                        title: bcTitle,
-                        message: bcMessage,
-                      }),
-                    });
-                    const d = await res.json();
-                    if (res.ok) {
-                      setMsg(`پیام با موفقیت به ${d.sentCount} نفر ارسال شد!`);
-                      setBcTitle("");
-                      setBcMessage("");
-                    } else {
-                      setMsg("خطا: " + d.error);
-                    }
-                  } catch {
-                    setMsg("خطا در برقراری ارتباط");
-                  } finally {
-                    setIsSending(false);
-                  }
-                }}
-                className="btn-gold w-full rounded-xl py-4 font-bold shadow-lg"
-              >
-                {isSending ? "در حال ارسال... ⏳" : "🚀 ارسال برای همه"}
-              </button>
-            </div>
           </div>
         )}
       </div>
