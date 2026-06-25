@@ -138,6 +138,45 @@ export default function HomeTab({
         </div>
       </div>
 
+      {/* بخش اقدامات فوری (Action Card) */}
+      <div className="card-gold card glow border-emerald-500/30 bg-emerald-950/20 rounded-2xl p-4">
+        <h3 className="text-xs font-bold text-emerald-400 mb-2">⚡ اقدام فوری</h3>
+        {(() => {
+          if (!claimedToday) {
+            return (
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-100">🎁 جایزه روزانه آماده دریافت است!</div>
+                <button onClick={() => setTab("more")} className="btn-gold rounded-lg px-4 py-1.5 text-[10px]">دریافت</button>
+              </div>
+            );
+          }
+          const finishedBuild = data.queues.builds.find(b => new Date(b.finishAt).getTime() <= now);
+          if (finishedBuild) {
+            return (
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-100">🏗️ ساخت ساختمان به پایان رسید.</div>
+                <button onClick={() => setTab("city")} className="btn-gold rounded-lg px-4 py-1.5 text-[10px]">تکمیل</button>
+              </div>
+            );
+          }
+          const finishedTrain = data.queues.trains.find(t => new Date(t.finishAt).getTime() <= now);
+          if (finishedTrain) {
+            return (
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-100">⚔️ نیروهای جدید آماده نبرد هستند.</div>
+                <button onClick={() => setTab("troops")} className="btn-gold rounded-lg px-4 py-1.5 text-[10px]">مشاهده</button>
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-slate-300 italic">فعلاً تمام کارها در جریان است...</div>
+              <button onClick={() => setTab("city")} className="card px-3 py-1.5 rounded-lg text-[10px] text-slate-300">مدیریت شهر</button>
+            </div>
+          );
+        })()}
+      </div>
+
       {/* دکمه‌های سریع */}
       <div className="grid grid-cols-4 gap-2">
         <QuickBtn

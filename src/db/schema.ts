@@ -73,6 +73,9 @@ export const players = pgTable("players", {
   citySkin: varchar("city_skin", { length: 24 }).notNull().default("default"),
   profileSkin: varchar("profile_skin", { length: 24 }).notNull().default("default"),
   ownedSkins: jsonb("owned_skins").$type<string[]>().notNull().default(["default"]),
+  claimedAchievements: jsonb("claimed_achievements").$type<string[]>().notNull().default([]),
+  starterPackBought: boolean("starter_pack_bought").notNull().default(false),
+  lastDailyLoginDate: varchar("last_daily_login_date", { length: 16 }).notNull().default(""),
   // آمار
   attacksWon: integer("attacks_won").notNull().default(0),
   attacksLost: integer("attacks_lost").notNull().default(0),
@@ -208,4 +211,13 @@ export const playerMissions = pgTable("player_missions", {
 export const settings = pgTable("settings", {
   key: varchar("key", { length: 48 }).primaryKey(),
   value: text("value").notNull().default(""),
+});
+
+// اطلاعیه‌ها و پیام‌های همگانی
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 128 }).notNull(),
+  message: text("message").notNull(),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

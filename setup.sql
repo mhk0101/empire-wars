@@ -155,3 +155,21 @@ CREATE TABLE IF NOT EXISTS settings (
   key varchar(48) PRIMARY KEY,
   value text NOT NULL DEFAULT ''
 );
+
+-- صف نبرد (حملات زمان‌دار)
+CREATE TABLE IF NOT EXISTS combat_queue (
+  id serial PRIMARY KEY,
+  attacker_id integer NOT NULL,
+  defender_id integer NOT NULL,
+  troops jsonb NOT NULL,
+  finish_at timestamp NOT NULL,
+  created_at timestamp NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id serial PRIMARY KEY,
+  title varchar(128) NOT NULL,
+  message text NOT NULL,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamp NOT NULL DEFAULT now()
+);

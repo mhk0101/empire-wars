@@ -6,6 +6,7 @@ import { eq, isNotNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+// ارسال پیام همگانی به تمام کاربرانی که ربات را استارت کرده‌اند
 export async function POST(req: Request) {
   const s = await getSettings();
   if (req.headers.get("x-admin-pass") !== s.adminPassword) {
@@ -13,35 +14,34 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { title, message, targetPlayerId, sendToTelegram } = body;
+  const title = String(body.title || "").trim();
+  const message = String(body.message || "").trim();
 
   if (!title || !message) {
-    return Response.json({ error: "عنوان و متن الزامی است." }, { status: 400 });
+    return Response.json({ error: "عنوان و متن پیام الزامی است." }, { status: 400 });
   }
 
-  // ۱. ثبت در اطلاعیه‌ها
+  // ۱. ثبت در جدول اطلاعیه‌ها (برای نمایش داخل بازی)
   await db.insert(announcements).values({ title, message });
 
-  // ۲. ارسال
-  let sentCount = 0;
-  if (targetPlayerId) {
-    // ارسال به یک کاربر خاص
-    const p = await db.select().from(players).where(eq(players.id, Number(targetPlayerId))).limit(1);
-    if (p.length && p[0].telegramId && sendToTelegram) {
-      await sendMessage(p[0].telegramId, `🔔 <b>${title}</b>\n\n${message}`);
-      sentCount = 1;
-    }
-  } else {
-    // ارسال همگانی
-    if (sendToTelegram) {
-      const all = await db.select({ tid: players.telegramId }).from(players).where(isNotNull(players.telegramId));
-      for (const p of all) {
-        if (p.tid) {
-          try { await sendMessage(p.tid, `📢 <b>${title}</b>\n\n${message}`); sentCount++; } catch {}
-        }
+  // ۲. ارسال به تلگرام (فقط کاربرانی که telegramId دارند)
+  const allPlayers = await db
+    .select({ telegramId: players.telegramId })
+    .from(players)
+    .where(isNotNull(players.telegramId));
+
+  let successCount = 0;
+  // ارسال تکی (برای مقیاس خیلی بالا باید از Queue استفاده شود، فعلاً ساده ارسال می‌کنیم)
+  for (const p of allPlayers) {
+    if (p.telegramId) {
+      try {
+        await sendMessage(p.telegramId, `📢 <b>${title}</b>\n\n${message}`);
+        successCount++;
+      } catch (e) {
+        console.error(`Failed to send to ${p.telegramId}`, e);
       }
     }
   }
 
-  return Response.json({ ok: true, sentCount });
+  return Response.json({ ok: true, sentCount: successCount });
 }

@@ -48,6 +48,16 @@ export default function CityTab({
   const [selected, setSelected] = useState<BuildingKey | null>(null);
   const [fx, setFx] = useState<string | null>(null);
 
+  // چرخه شب و روز (بر اساس ثانیه فعلی)
+  const getTimeOfDay = () => {
+    const mins = (nowMs / 60000) % 20; // کل چرخه ۲۰ دقیقه
+    if (mins < 5) return "morning";
+    if (mins < 10) return "noon";
+    if (mins < 15) return "evening";
+    return "night";
+  };
+  const tod = getTimeOfDay();
+
   const builds = data.queues.builds;
   const buildByKey = new Map(builds.map((b) => [b.building, b]));
   const queueFull = builds.length >= 2;
@@ -67,6 +77,21 @@ export default function CityTab({
       setFx(`${BUILDINGS[key].emoji} ${BUILDINGS[key].name} در حال ساخت!`);
       setTimeout(() => setFx(null), 1600);
       notify(`${BUILDINGS[key].name} به صف ساخت اضافه شد! ⏳`);
+    } catch (e) {
+      notify((e as Error).message, false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function speedUp(type: 'build' | 'train', id: number) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await post("/api/speedup", { type, id });
+      setPlayer(res.player);
+      await refresh();
+      notify(res.message || "زمان با موفقیت به پایان رسید! ✨");
     } catch (e) {
       notify((e as Error).message, false);
     } finally {
@@ -201,6 +226,7 @@ export default function CityTab({
           queueFull={queueFull}
           onClose={() => setSelected(null)}
           onUpgrade={() => upgrade(selected)}
+          onSpeedUp={speedUp}
         />
       )}
     </div>
@@ -215,6 +241,7 @@ function BuildingModal({
   queueFull,
   onClose,
   onUpgrade,
+  onSpeedUp,
 }: {
   bKey: BuildingKey;
   data: TabProps["data"];
@@ -223,6 +250,7 @@ function BuildingModal({
   queueFull: boolean;
   onClose: () => void;
   onUpgrade: () => void;
+  onSpeedUp: (type: 'build' | 'train', id: number) => void;
 }) {
   const p = data.player;
   const def = BUILDINGS[bKey];
@@ -274,11 +302,21 @@ function BuildingModal({
 
         {/* در حال ساخت */}
         {job ? (
-          <div className="mt-4 rounded-2xl border border-sky-500/30 bg-sky-900/30 p-4 text-center">
-            <div className="text-sm text-sky-300">🔨 در حال ساخت</div>
-            <div className="font-mono text-2xl font-black text-sky-200">
-              {countdown(job.finishAt, nowMs)}
+          <div className="mt-4 space-y-2">
+            <div className="rounded-2xl border border-sky-500/30 bg-sky-900/30 p-4 text-center">
+              <div className="text-sm text-sky-300">🔨 در حال ساخت</div>
+              <div className="font-mono text-2xl font-black text-sky-200">
+                {countdown(job.finishAt, nowMs)}
+              </div>
             </div>
+            <button
+              onClick={() => onSpeedUp('build', job.id)}
+              disabled={busy}
+              className="btn-gold w-full rounded-xl py-3 text-sm flex items-center justify-center gap-2"
+            >
+              <span>✨ پایان فوری:</span>
+              <span className="font-bold">{Math.ceil(Math.max(0, (new Date(job.finishAt).getTime() - nowMs) / 60000))} 💎</span>
+            </button>
           </div>
         ) : max ? (
           <div className="mt-4 rounded-2xl bg-[#f5c542]/15 py-3 text-center text-sm font-bold text-[#f5c542]">
