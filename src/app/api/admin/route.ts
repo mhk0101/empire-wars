@@ -17,17 +17,8 @@ import { eq, desc, ilike, or, sql, count } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 async function checkAuth(req: Request): Promise<boolean> {
-  try {
-    const s = await getSettings();
-    const providedPass = req.headers.get("x-admin-pass");
-    // اگر در دیتابیس نبود، از متغیر محیطی یا پیش‌فرض استفاده کن
-    const correctPass = s.adminPassword || process.env.ADMIN_PASSWORD || "admin1234";
-    return providedPass === correctPass;
-  } catch (e) {
-    console.error("Auth error:", e);
-    // در صورت خطای دیتابیس، فقط رمز فیزیکی را چک کن
-    return req.headers.get("x-admin-pass") === "admin1234";
-  }
+  const s = await getSettings();
+  return req.headers.get("x-admin-pass") === s.adminPassword;
 }
 
 // ===== GET: داده‌های پنل =====
