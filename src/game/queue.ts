@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { players, buildQueue, trainQueue } from "@/db/schema";
-import { eq, and, lte, asc, sql } from "drizzle-orm";
+import { eq, and, lte, asc } from "drizzle-orm";
 import { computePower, levelFromXp, XP_REWARDS, type TroopKey } from "./config";
 
 // پردازش صف‌های ساخت و آموزش بازیکن: کارهای تمام‌شده را اعمال می‌کند
@@ -62,18 +62,16 @@ export async function processQueues(playerId: number) {
     .set({ buildings, troops, xp, level, power })
     .where(eq(players.id, playerId));
 
-  // حذف کارهای تمام‌شده (یکجا برای کارایی بالاتر)
+  // حذف کارهای تمام‌شده
   if (doneBuilds.length) {
-    const ids = doneBuilds.map((b) => b.id);
-    await db
-      .delete(buildQueue)
-      .where(sql`${buildQueue.id} in ${ids}`);
+    for (const b of doneBuilds) {
+      await db.delete(buildQueue).where(eq(buildQueue.id, b.id));
+    }
   }
   if (doneTrains.length) {
-    const ids = doneTrains.map((t) => t.id);
-    await db
-      .delete(trainQueue)
-      .where(sql`${trainQueue.id} in ${ids}`);
+    for (const t of doneTrains) {
+      await db.delete(trainQueue).where(eq(trainQueue.id, t.id));
+    }
   }
 }
 
