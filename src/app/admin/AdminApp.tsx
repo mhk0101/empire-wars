@@ -42,7 +42,7 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings"
+    "stats" | "players" | "payments" | "settings" | "broadcast"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
@@ -54,6 +54,8 @@ export default function AdminApp() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMsg, setBroadcastMsg] = useState("");
 
   const api = useCallback(
     async (path: string, opts: RequestInit = {}) => {
@@ -92,13 +94,8 @@ export default function AdminApp() {
 
   async function login() {
     try {
-      const res = await fetch("/api/admin?view=stats", {
-        headers: { "x-admin-pass": pass },
-      });
-      if (res.status === 401) {
-        setMsg("رمز اشتباه است.");
-        return;
-      }
+      // رمز غیرفعال شد - مستقیم وارد میشه
+      const res = await fetch("/api/admin?view=stats");
       const d = await res.json();
       setStats(d.stats);
       setAuthed(true);
@@ -211,12 +208,13 @@ export default function AdminApp() {
 
         {/* تب‌ها */}
         <div className="mb-4 flex gap-2">
-          {[
-            ["stats", "📊 آمار"],
-            ["players", "👥 کاربران"],
-            ["payments", "💎 پرداخت‌ها"],
-            ["settings", "⚙️ تنظیمات"],
-          ].map(([id, label]) => (
+        {[
+          ["stats", "📊 آمار"],
+          ["players", "👥 کاربران"],
+          ["payments", "💎 پرداخت‌ها"],
+          ["settings", "⚙️ تنظیمات"],
+          ["broadcast", "📢 پیام همگانی"],
+        ].map(([id, label]) => (
             <button
               key={id}
               onClick={() => setTab(id as typeof tab)}
@@ -512,6 +510,66 @@ export default function AdminApp() {
             >
               💾 ذخیره همه تنظیمات
             </button>
+          </div>
+        )}
+
+        {tab === "broadcast" && (
+          <div className="space-y-4">
+            <div className="card-gold rounded-2xl p-4">
+              <h3 className="mb-3 text-sm font-bold">📢 ارسال پیام همگانی</h3>
+              
+              <label className="block text-xs text-slate-300 mb-1">عنوان پیام</label>
+              <input
+                type="text"
+                value={broadcastTitle}
+                onChange={(e) => setBroadcastTitle(e.target.value)}
+                placeholder="مثلاً: به‌روزرسانی جدید"
+                className="w-full rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm mb-3"
+              />
+              
+              <label className="block text-xs text-slate-300 mb-1">متن پیام</label>
+              <textarea
+                value={broadcastMsg}
+                onChange={(e) => setBroadcastMsg(e.target.value)}
+                placeholder="متن پیام همگانی که برای همه بازیکنان ارسال می‌شود..."
+                className="w-full rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm h-32 resize-none mb-3"
+              />
+              
+              <button
+                onClick={async () => {
+                  if (!broadcastTitle || !broadcastMsg) {
+                    setMsg("❌ لطفاً عنوان و متن پیام را وارد کنید");
+                    return;
+                  }
+                  try {
+                    await api("/broadcast", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        title: broadcastTitle,
+                        message: broadcastMsg,
+                      }),
+                    });
+                    setMsg("✅ پیام با موفقیت ارسال شد");
+                    setBroadcastTitle("");
+                    setBroadcastMsg("");
+                  } catch (e: any) {
+                    setMsg("❌ خطا: " + e.message);
+                  }
+                }}
+                className="btn-gold w-full rounded-xl py-3 text-sm"
+              >
+                📤 ارسال پیام همگانی
+              </button>
+            </div>
+            
+            <div className="card rounded-2xl p-4">
+              <h4 className="text-xs font-bold text-slate-400 mb-2">💡 راهنما</h4>
+              <ul className="text-[10px] text-slate-500 space-y-1">
+                <li>• پیام برای همه بازیکنان در صفحه اصلی نمایش داده می‌شود</li>
+                <li>• از این قابلیت برای اطلاع‌رسانی رویدادها و به‌روزرسانی‌ها استفاده کنید</li>
+                <li>• پیام‌های قبلی در جدول announcements ذخیره می‌شوند</li>
+              </ul>
+            </div>
           </div>
         )}
       </div>

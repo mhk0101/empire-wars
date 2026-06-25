@@ -13,6 +13,7 @@ import {
 } from "@/game/client";
 import NameModal from "./NameModal";
 import InstallPrompt from "./InstallPrompt";
+import NotificationPopup from "./NotificationPopup";
 import HomeTab from "./tabs/HomeTab";
 import CityTab from "./tabs/CityTab";
 import TroopsTab from "./tabs/TroopsTab";
@@ -298,6 +299,9 @@ export default function GameApp() {
 
       {/* پیشنهاد نصب روی موبایل (PWA) */}
       <InstallPrompt />
+
+      {/* سیستم اعلان‌ها */}
+      <NotificationPopup />
 
       {/* توست */}
       {toast && (
