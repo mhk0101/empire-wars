@@ -11,6 +11,7 @@ export async function GET() {
   const base = await getOrCreatePlayer();
   const player = (await syncPlayer(base.id)) ?? base;
 
+  const claimed = player.claimedAchievements || [];
   const achievements = ACHIEVEMENTS.map((a) => {
     const value = (player as unknown as Record<string, number>)[a.check] ?? 0;
     return {
@@ -19,6 +20,7 @@ export async function GET() {
       target: a.target,
       value,
       done: value >= a.target,
+      claimed: claimed.includes(a.id),
       reward: a.reward,
     };
   });

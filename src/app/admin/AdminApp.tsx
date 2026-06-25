@@ -42,7 +42,7 @@ export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings"
+    "stats" | "players" | "payments" | "broadcast" | "settings"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
@@ -210,11 +210,12 @@ export default function AdminApp() {
         )}
 
         {/* تب‌ها */}
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex gap-2 flex-wrap">
           {[
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
             ["payments", "💎 پرداخت‌ها"],
+            ["broadcast", "📢 اطلاع‌رسانی"],
             ["settings", "⚙️ تنظیمات"],
           ].map(([id, label]) => (
             <button
@@ -470,6 +471,11 @@ export default function AdminApp() {
           </div>
         )}
 
+        {/* اطلاع‌رسانی */}
+        {tab === "broadcast" && (
+          <BroadcastTab api={api} setMsg={setMsg} />
+        )}
+
         {/* تنظیمات */}
         {tab === "settings" && (
           <div className="space-y-5">
@@ -565,6 +571,128 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-[#f5c542]/20 bg-[#121a2e] p-4 text-center">
       <div className="text-[11px] text-slate-400">{label}</div>
       <div className="mt-1 text-2xl font-black text-[#f5c542]">{value}</div>
+    </div>
+  );
+}
+
+function BroadcastTab({
+  api,
+  setMsg,
+}: {
+  api: (path: string, opts?: RequestInit) => Promise<any>;
+  setMsg: (m: string) => void;
+}) {
+  const [bcTitle, setBcTitle] = useState("");
+  const [bcMsg, setBcMsg] = useState("");
+  const [dmPlayerId, setDmPlayerId] = useState("");
+  const [dmTitle, setDmTitle] = useState("");
+  const [dmMsg, setDmMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function sendBroadcast() {
+    if (!bcTitle.trim() || !bcMsg.trim()) {
+      setMsg("عنوان و متن پیام همگانی را وارد کنید.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const d = await fetch("/api/admin/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "" },
+        body: JSON.stringify({ title: bcTitle, message: bcMsg }),
+      }).then((r) => r.json());
+      if (d.error) setMsg("خطا: " + d.error);
+      else setMsg(`پیام همگانی ارسال شد ✅ (تعداد: ${d.sentCount ?? 0})`);
+      setBcTitle("");
+      setBcMsg("");
+    } catch {
+      setMsg("خطا در ارسال پیام همگانی.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendDM() {
+    const pid = Number(dmPlayerId);
+    if (!pid || !dmTitle.trim() || !dmMsg.trim()) {
+      setMsg("شناسه کاربر، عنوان و متن پیام خصوصی را وارد کنید.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const d = await fetch("/api/admin/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-pass": sessionStorage.getItem("ew_admin_pass") || "" },
+        body: JSON.stringify({ playerId: pid, title: dmTitle, message: dmMsg }),
+      }).then((r) => r.json());
+      if (d.error) setMsg("خطا: " + d.error);
+      else setMsg("پیام خصوصی ارسال شد ✅");
+      setDmPlayerId("");
+      setDmTitle("");
+      setDmMsg("");
+    } catch {
+      setMsg("خطا در ارسال پیام خصوصی.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📢 ارسال پیام همگانی</h3>
+        <input
+          value={bcTitle}
+          onChange={(e) => setBcTitle(e.target.value)}
+          placeholder="عنوان پیام"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+        />
+        <textarea
+          value={bcMsg}
+          onChange={(e) => setBcMsg(e.target.value)}
+          placeholder="متن پیام"
+          rows={3}
+          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+        />
+        <button
+          disabled={busy}
+          onClick={sendBroadcast}
+          className="btn-gold w-full rounded-xl py-2 text-sm"
+        >
+          ارسال همگانی
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+        <h3 className="mb-3 text-sm font-bold text-[#f5c542]">📩 ارسال پیام به کاربر خاص</h3>
+        <input
+          type="number"
+          value={dmPlayerId}
+          onChange={(e) => setDmPlayerId(e.target.value)}
+          placeholder="شناسه کاربر (ID)"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+        />
+        <input
+          value={dmTitle}
+          onChange={(e) => setDmTitle(e.target.value)}
+          placeholder="عنوان پیام"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+        />
+        <textarea
+          value={dmMsg}
+          onChange={(e) => setDmMsg(e.target.value)}
+          placeholder="متن پیام"
+          rows={3}
+          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+        />
+        <button
+          disabled={busy}
+          onClick={sendDM}
+          className="btn-gold w-full rounded-xl py-2 text-sm"
+        >
+          ارسال پیام خصوصی
+        </button>
+      </div>
     </div>
   );
 }

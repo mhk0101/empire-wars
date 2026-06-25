@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import ServiceWorkerRegister from "./ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "👑 Empire Wars — جنگ امپراتوری‌ها",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         suppressHydrationWarning
       >
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

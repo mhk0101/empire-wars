@@ -11,6 +11,7 @@ interface Achievement {
   target: number;
   value: number;
   done: boolean;
+  claimed: boolean;
   reward: { gems?: number };
 }
 interface WorldEvent {
@@ -130,7 +131,7 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
     }
   }
 
-  const streakDay = ((p.dailyStreak - (claimedToday ? 1 : 0)) % 7) + 1;
+  const streakDay = claimedToday ? ((p.dailyStreak % 7) + 1) : (p.dailyStreak || 1);
 
   return (
     <div className="space-y-6">
@@ -225,7 +226,9 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                 <span>
                   {fa(Math.min(a.value, a.target))}/{fa(a.target)}
                 </span>
-                {a.done && (
+                {a.claimed ? (
+                  <span className="text-emerald-400">✅ دریافت شد</span>
+                ) : a.done ? (
                   <button
                     disabled={busy === a.id}
                     onClick={() => claimAch(a.id)}
@@ -233,7 +236,7 @@ export default function MoreTab({ data, setPlayer, notify, nowMs }: TabProps) {
                   >
                     دریافت
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           ))}

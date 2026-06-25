@@ -88,6 +88,15 @@ export default function GameApp() {
     refresh();
   }, [refresh]);
 
+  // اگر بعد ۱۲ ثانیه هنوز داده نیامده، خطای timeout نشان بده
+  useEffect(() => {
+    if (data) return;
+    const t = setTimeout(() => {
+      setLoadError((prev) => prev || "سرور کند است؛ لطفاً صبر کنید یا دوباره تلاش کنید.");
+    }, 12000);
+    return () => clearTimeout(t);
+  }, [data]);
+
   // به‌روزرسانی منابع هر ۳۰ ثانیه (interval فقط یک‌بار ساخته می‌شود)
   useEffect(() => {
     const t = setInterval(refresh, 30000);

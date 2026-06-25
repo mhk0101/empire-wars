@@ -33,13 +33,6 @@ export default function InstallPrompt() {
   const [show, setShow] = useState(false);
   const [iosHelp, setIosHelp] = useState(false);
 
-  // ثبت سرویس‌ورکر
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
-  }, []);
-
   useEffect(() => {
     // اگر قبلاً نصب شده یا در حالت standalone است، چیزی نشان نده
     if (isStandalone() || localStorage.getItem(INSTALLED_KEY) === "1") return;

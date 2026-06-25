@@ -1,17 +1,7 @@
-// سرویس‌ورکر سبک برای نصب‌پذیری PWA
-const CACHE = "empire-wars-v1";
-
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-// استراتژی کش پیشرفته برای پایداری PWA
-const CACHE_NAME = "empire-wars-v2";
+const CACHE_NAME = "empire-wars-v3";
 const ASSETS_TO_CACHE = [
+  "/",
+  "/game",
   "/manifest.webmanifest",
   "/icons/icon.svg",
 ];
@@ -36,20 +26,38 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  
-  // ۱. درخواست‌های API و فایل‌های Next.js (HMR) نباید کش شوند
+
+  // API و HMR نباید کش شوند
   if (url.pathname.startsWith("/api/") || url.pathname.includes("_next/webpack-hmr")) {
     return;
   }
 
-  // ۲. برای بقیه موارد: ابتدا شبکه، اگر نشد کش (Network First)
+  // برای صفحات HTML: Stale-While-Revalidate (پایداری + تازگی)
+  if (event.request.mode === "navigate" || event.request.destination === "document") {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const fetchPromise = fetch(event.request)
+          .then((res) => {
+            if (res.status === 200) {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+            }
+            return res;
+          })
+          .catch(() => cached);
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // برای بقیه: Network First با fallback به کش
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        // اگر پاسخ اوکی بود، آن را در کش ذخیره/آپدیت کن
         if (res.status === 200 && event.request.method === "GET") {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
         }
         return res;
       })
