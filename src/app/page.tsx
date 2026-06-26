@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+// صفحه‌ی کاملاً استاتیک — بدون داده‌ی داینامیک، پس نیازی به رندر سرور در هر درخواست نیست
+export const dynamic = "force-static";
+export const revalidate = false;
 
 const features = [
   { emoji: "🏰", title: "ساخت امپراتوری", desc: "از یک قلمرو کوچک شروع کن و شهری قدرتمند بساز." },
@@ -37,10 +39,10 @@ const loop = [
 export default function Landing() {
   return (
     <main className="min-h-screen overflow-hidden">
-      {/* پس‌زمینه */}
+      {/* پس‌زمینه — سبک و بدون blur برای کارایی بالا در موبایل */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a2440_0%,#0a0e1a_60%)]" />
-        <div className="absolute left-1/2 top-[-10%] h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#f5c542]/10 blur-[120px]" />
+        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(245,197,66,0.16)_0%,transparent_70%)]" />
       </div>
 
       {/* هدر */}

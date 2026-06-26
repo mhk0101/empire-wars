@@ -56,9 +56,8 @@ body {
 }
 
 .card {
-  background: linear-gradient(160deg, rgba(26, 36, 64, 0.9), rgba(18, 26, 46, 0.9));
+  background: linear-gradient(160deg, #1a2440, #121a2e);
   border: 1px solid rgba(245, 197, 66, 0.12);
-  backdrop-filter: blur(8px);
 }
 
 .card-gold {
