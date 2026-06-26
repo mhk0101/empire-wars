@@ -45,7 +45,7 @@ export default function Landing() {
 
       {/* هدر */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="text-xl font-black gold-text">👑 Empire Wars</div>
+        <div className="text-xl font-black gold-text">👑 جنگ امپراتورها</div>
         <Link
           href="/game"
           className="btn-gold rounded-xl px-4 py-2 text-sm"
