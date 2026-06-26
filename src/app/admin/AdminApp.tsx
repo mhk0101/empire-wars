@@ -27,6 +27,8 @@ interface PlayerRow {
   gems: number;
   banned: boolean;
   attacksWon: number;
+  createdAt: string;
+  lastCollect: string;
 }
 
 interface Stats {
@@ -392,12 +394,36 @@ export default function AdminApp() {
                   className="rounded-2xl border border-white/10 bg-[#121a2e] p-3"
                 >
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex flex-wrap items-center gap-x-2">
                       <span className="font-bold">
                         {pl.banned && "🚫 "}
                         {pl.username}
                       </span>
-                      <span className="mr-2 text-[11px] text-slate-400">
+                      {(() => {
+                        const online =
+                          Date.now() -
+                            new Date(pl.lastCollect).getTime() <
+                          15 * 60 * 1000;
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                              online
+                                ? "bg-emerald-900/50 text-emerald-300"
+                                : "bg-slate-700/50 text-slate-400"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                online
+                                  ? "bg-emerald-400"
+                                  : "bg-slate-500"
+                              }`}
+                            />
+                            {online ? "آنلاین" : "آفلاین"}
+                          </span>
+                        );
+                      })()}
+                      <span className="text-[11px] text-slate-400">
                         #{pl.id} • سطح {fa(pl.level)} • ⚡{fa(pl.power)}
                       </span>
                     </div>
