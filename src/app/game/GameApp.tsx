@@ -214,7 +214,7 @@ export default function GameApp() {
         <div className="mx-auto max-w-3xl px-3 py-2">
           <div className="mb-2 flex items-center justify-between">
             <Link href="/" className="text-sm font-black gold-text">
-              👑 Empire Wars
+              👑 جنگ امپراتورها
             </Link>
             <div className="flex items-center gap-2 text-xs text-slate-300">
               <button
