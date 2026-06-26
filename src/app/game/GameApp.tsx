@@ -16,6 +16,7 @@ import InstallPrompt from "./InstallPrompt";
 import GlobalAnnouncement from "./GlobalAnnouncement";
 import NotificationPopup from "./NotificationPopup";
 import Tutorial from "./Tutorial";
+import DailyRewardPopup from "./DailyRewardPopup";
 import HomeTab from "./tabs/HomeTab";
 import CityTab from "./tabs/CityTab";
 import TroopsTab from "./tabs/TroopsTab";
@@ -326,6 +327,15 @@ export default function GameApp() {
             setShowTutorial(false);
             setPlayer({ ...data.player, tutorialDone: true });
           }}
+        />
+      )}
+
+      {/* پاپ‌آپ جایزه‌ی روزانه (وقتی آماده باشد، یک‌بار در روز) */}
+      {!showName && !showTutorial && (
+        <DailyRewardPopup
+          player={p}
+          onClaim={setPlayer}
+          notify={notify}
         />
       )}
 
