@@ -149,6 +149,25 @@ export async function POST(req: Request) {
             power: Math.max(0, c[0].power - player.power),
           })
           .where(eq(clans.id, c[0].id));
+        // اگر رهبر کلن را ترک می‌کند، رهبری به قوی‌ترین عضو منتقل شود
+        if (c[0].leaderId === player.id) {
+          const next = await db
+            .select()
+            .from(players)
+            .where(eq(players.clanId, c[0].id))
+            .orderBy(desc(players.power))
+            .limit(1);
+          if (next.length) {
+            await db
+              .update(players)
+              .set({ clanRole: "leader" })
+              .where(eq(players.id, next[0].id));
+            await db
+              .update(clans)
+              .set({ leaderId: next[0].id })
+              .where(eq(clans.id, c[0].id));
+          }
+        }
       }
     }
     await db.update(players).set({ clanId: null, clanRole: "member" }).where(eq(players.id, player.id));

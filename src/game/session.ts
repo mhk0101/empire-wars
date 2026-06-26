@@ -38,6 +38,29 @@ const NAMES = [
   "خان",
 ];
 
+// مقادیر پیش‌فرض ساختمان‌ها، نیروها و تحقیقات
+// (به‌صورت صریح در INSERT تنظیم می‌شوند تا مطمئن باشیم همیشه درست اعمال می‌شوند)
+const DEFAULT_BUILDINGS = {
+  command: 1,
+  goldmine: 1,
+  farm: 1,
+  stonemine: 1,
+  ironworks: 1,
+  warehouse: 1,
+  barracks: 1,
+  lab: 1,
+  market: 1,
+  wall: 0,
+};
+const DEFAULT_TROOPS = { soldier: 0, archer: 0, knight: 0, warmachine: 0 };
+const DEFAULT_RESEARCH = {
+  economy: 0,
+  speed: 0,
+  defense: 0,
+  attack: 0,
+  training: 0,
+};
+
 // دریافت بازیکن بر اساس توکن دستگاه پایدار
 // اولویت: هدر x-ew-token (از localStorage، قابل اعتماد در وب‌ویو تلگرام) سپس کوکی
 export async function getOrCreatePlayer() {
@@ -101,6 +124,9 @@ export async function getOrCreatePlayer() {
           username,
           inviteCode: randomCode(),
           deviceToken: effectiveToken,
+          buildings: { ...DEFAULT_BUILDINGS },
+          troops: { ...DEFAULT_TROOPS },
+          research: { ...DEFAULT_RESEARCH },
           // سپر ۲۴ ساعته برای بازیکنان جدید
           shieldUntil: new Date(Date.now() + 24 * 3600_000),
         })
@@ -144,6 +170,14 @@ export async function getOrCreatePlayer() {
   return player;
 }
 
+// مقادیر پیش‌فرض را با یک آبجکت ناقص ادغام کن تا کلیدهای گمشده پر شوند
+function mergeDefaults<T extends Record<string, number>>(
+  obj: Record<string, number> | null | undefined,
+  defaults: Record<string, number>
+): T {
+  return { ...defaults, ...(obj || {}) } as T;
+}
+
 // همگام‌سازی منابع و قدرت بازیکن (بدون نیاز به آنلاین بودن)
 export async function syncPlayer(playerId: number) {
   const found = await db
@@ -153,9 +187,18 @@ export async function syncPlayer(playerId: number) {
     .limit(1);
   if (!found.length) return null;
   const p = found[0];
+
+  // ترمیم خودکار: اگر ساختمان‌ها/نیروها/تحقیقات خالی یا ناقص هستند، مقادیر پیش‌فرض را پر کن
+  const buildings = mergeDefaults(p.buildings, DEFAULT_BUILDINGS);
+  const troops = mergeDefaults(p.troops, DEFAULT_TROOPS);
+  const research = mergeDefaults(p.research, DEFAULT_RESEARCH);
+
   const now = new Date();
-  const { gold, food, stone, iron, gained } = collectResources(p, now);
-  const power = computePower(p.buildings, p.troops, p.research);
+  const { gold, food, stone, iron, gained } = collectResources(
+    { ...p, buildings, research },
+    now
+  );
+  const power = computePower(buildings, troops, research);
 
   const updated = await db
     .update(players)
@@ -166,6 +209,9 @@ export async function syncPlayer(playerId: number) {
       iron,
       lastCollect: now,
       power,
+      buildings,
+      troops,
+      research,
       totalGoldEarned: p.totalGoldEarned + Math.max(0, gained.gold),
     })
     .where(eq(players.id, playerId))
@@ -217,6 +263,9 @@ export async function getOrCreatePlayerByTelegram(
           username,
           inviteCode: randomCode(),
           deviceToken: `tg_${telegramId}`,
+          buildings: { ...DEFAULT_BUILDINGS },
+          troops: { ...DEFAULT_TROOPS },
+          research: { ...DEFAULT_RESEARCH },
         })
         .returning();
       return inserted[0];

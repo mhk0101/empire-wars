@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { worldEvents } from "@/db/schema";
-import { eq, desc, and, gt } from "drizzle-orm";
+import { eq, desc, and, gt, lte } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +37,11 @@ const POOL = [
 export async function GET() {
   const now = new Date();
 
-  // غیرفعال‌کردن رویدادهای منقضی‌شده
+  // فقط رویدادهای منقضی‌شده (زمان پایان گذشته) را غیرفعال کن
   await db
     .update(worldEvents)
     .set({ active: false })
-    .where(and(eq(worldEvents.active, true)));
+    .where(and(eq(worldEvents.active, true), lte(worldEvents.endsAt, now)));
 
   // فقط رویدادهای فعال و دارای زمان معتبر را نگه دار
   let rows = await db

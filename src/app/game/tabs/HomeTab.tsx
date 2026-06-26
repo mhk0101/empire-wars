@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RESOURCE_INFO, TROOPS, SKINS, type TroopKey } from "@/game/config";
+import { RESOURCE_INFO, TROOPS, SKINS, dayKey, type TroopKey } from "@/game/config";
 import { fa, faShort, countdown, getJSON } from "@/game/client";
 import type { TabProps } from "../GameApp";
 
@@ -46,9 +46,9 @@ export default function HomeTab({
   const shieldActive =
     !!p.shieldUntil && new Date(p.shieldUntil).getTime() > now;
 
+  // بررسی «امروز دریافت شده» با کلید تاریخ سازگار با سرور (تهران)
   const claimedToday =
-    p.lastDailyClaim &&
-    new Date(p.lastDailyClaim).toDateString() === new Date(now).toDateString();
+    !!p.lastDailyClaim && dayKey(new Date(p.lastDailyClaim)) === dayKey();
 
   const totalTroops = Object.values(p.troops).reduce(
     (s, n) => s + (n as number),
