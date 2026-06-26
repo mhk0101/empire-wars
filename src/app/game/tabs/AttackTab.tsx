@@ -26,6 +26,25 @@ interface Report {
   createdAt: string;
 }
 
+interface BattlePhase {
+  targetName: string;
+  step: number; // 0..totalSteps
+  totalSteps: number;
+}
+
+const BATTLE_STEPS = [
+  "Marshaling forces…",
+  "قوای خود را آماده می‌کنی…",
+  "Archers loose…",
+  "تیراندازان آتش می‌گشایند…",
+  "Cavalry charge…",
+  "سواره‌نظام یورش می‌برد…",
+  "Siege weapons…",
+  "ماشین‌های جنگی درگیر می‌شوند…",
+  "Final assault…",
+  "یورش نهایی…",
+];
+
 export default function AttackTab({ data, setPlayer, notify }: TabProps) {
   const p = data.player;
   const [targets, setTargets] = useState<Target[]>([]);
@@ -38,6 +57,8 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
     loot: Record<string, number>;
     details: string;
   } | null>(null);
+  // توالی انیمیشن حمله (تایمر زنده)
+  const [battle, setBattle] = useState<BattlePhase | null>(null);
 
   async function loadTargets() {
     const d = await getJSON("/api/targets");
@@ -59,9 +80,29 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
     0
   );
 
+  // توالی حمله: ابتدا انیمیشن نبرد (تایمر زنده)، سپس درخواست واقعی به سرور
   async function attack(t: Target) {
+    if (busy !== null) return;
     setBusy(t.id);
     setResult(null);
+
+    // نمایش توالی انیمیشن نبرد طی ~۲.۵ ثانیه
+    const totalSteps = BATTLE_STEPS.length;
+    setBattle({ targetName: t.username, step: 0, totalSteps });
+    await new Promise<void>((resolve) => {
+      let i = 0;
+      const tick = () => {
+        i++;
+        setBattle({ targetName: t.username, step: i, totalSteps });
+        if (i >= totalSteps) {
+          resolve();
+        } else {
+          setTimeout(tick, 280);
+        }
+      };
+      setTimeout(tick, 280);
+    });
+
     try {
       const res = await post("/api/attack", { targetId: t.id });
       setPlayer(res.player);
@@ -72,6 +113,7 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
     } catch (e) {
       notify((e as Error).message, false);
     } finally {
+      setBattle(null);
       setBusy(null);
     }
   }
@@ -105,6 +147,38 @@ export default function AttackTab({ data, setPlayer, notify }: TabProps) {
           📜 گزارش‌ها
         </button>
       </div>
+
+      {/* پوشش انیمیشن نبرد زنده هنگام حمله */}
+      {battle && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
+          <div className="card-gold card glow w-full max-w-sm rounded-3xl p-6 text-center">
+            <div className="mb-2 text-xs font-bold text-[#f5c542]">
+              ⚔️ نبرد در جریان است
+            </div>
+            <div className="mb-4 text-lg font-black text-slate-100">
+              حمله به {battle.targetName}
+            </div>
+            {/* نوار پیشرفت نبرد */}
+            <div className="mb-3 h-3 overflow-hidden rounded-full bg-[#0a0e1a]">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-300"
+                style={{
+                  width: `${(battle.step / battle.totalSteps) * 100}%`,
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-center gap-1 text-4xl">
+              <span className="animate-pulse">⚔️</span>
+              <span className="text-slate-500">vs</span>
+              <span className="animate-pulse">🛡️</span>
+            </div>
+            <p className="mt-3 text-xs text-slate-300">
+              {BATTLE_STEPS[(battle.step - 1 + BATTLE_STEPS.length) %
+                BATTLE_STEPS.length]}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* نتیجه آخرین حمله */}
       {result && (

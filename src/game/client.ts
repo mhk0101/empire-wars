@@ -31,6 +31,7 @@ export interface Player {
   citySkin: string;
   profileSkin: string;
   ownedSkins: string[];
+  tutorialDone: boolean;
 }
 
 export interface BuildJob {

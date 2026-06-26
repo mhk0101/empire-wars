@@ -62,6 +62,17 @@ export default function AdminApp() {
   const [annInApp, setAnnInApp] = useState(true); // پاپ‌آپ داخل بازی
   const [annTelegram, setAnnTelegram] = useState(false); // پیام تلگرام
   const [sending, setSending] = useState(false);
+  // لیست پیام‌های ذخیره‌شده
+  const [msgList, setMsgList] = useState<
+    {
+      id: string;
+      kind: string;
+      title: string;
+      message: string;
+      target: string;
+      createdAt: string;
+    }[]
+  >([]);
 
   const api = useCallback(
     async (path: string, opts: RequestInit = {}) => {
@@ -127,6 +138,7 @@ export default function AdminApp() {
     if (tab === "stats") loadStats();
     if (tab === "payments") loadPayments();
     if (tab === "players") loadPlayers(search);
+    if (tab === "announce") loadMessages();
     if (tab === "settings")
       api("?view=settings").then((d) => setSettingsData(d.settings || {}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,11 +208,56 @@ export default function AdminApp() {
         setAnnTitle("");
         setAnnMessage("");
         if (d.mode === "user") setAnnUser("");
+        loadMessages();
       }
     } catch {
       setMsg("خطا در ارسال پیام.");
     } finally {
       setSending(false);
+    }
+  }
+
+  // بارگذاری پیام‌های ذخیره‌شده (همگانی و اختصاصی)
+  async function loadMessages() {
+    try {
+      const res = await fetch("/api/admin/broadcast?list=1", {
+        headers: { "x-admin-pass": pass },
+      });
+      if (res.status === 401) {
+        setAuthed(false);
+        return;
+      }
+      const d = await res.json();
+      const all = [
+        ...(d.broadcasts || []),
+        ...(d.targeted || []),
+      ].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setMsgList(all);
+    } catch {
+      // بی‌صدا
+    }
+  }
+
+  // حذف یک پیام
+  async function deleteMessage(id: string) {
+    if (!confirm("این پیام حذف شود؟")) return;
+    try {
+      const res = await fetch(`/api/admin/broadcast?id=${id}`, {
+        method: "DELETE",
+        headers: { "x-admin-pass": pass },
+      });
+      const d = await res.json();
+      if (d.error) {
+        setMsg("خطا: " + d.error);
+        return;
+      }
+      setMsg("پیام حذف شد 🗑️");
+      loadMessages();
+    } catch {
+      setMsg("خطا در حذف پیام.");
     }
   }
 
@@ -652,6 +709,68 @@ export default function AdminApp() {
                     ? "📢 ارسال پیام"
                     : "📨 ارسال پیام"}
               </button>
+            </div>
+
+            {/* لیست پیام‌های ذخیره‌شده با امکان حذف */}
+            <div className="rounded-2xl border border-white/10 bg-[#121a2e] p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#f5c542]">
+                  📥 پیام‌های ذخیره‌شده ({fa(msgList.length)})
+                </h3>
+                <button
+                  onClick={loadMessages}
+                  className="text-[10px] text-slate-400"
+                >
+                  🔄 بازخوانی
+                </button>
+              </div>
+
+              {msgList.length === 0 ? (
+                <p className="py-4 text-center text-[11px] text-slate-500">
+                  هنوز پیامی ارسال نشده است.
+                </p>
+              ) : (
+                <div className="max-h-96 space-y-2 overflow-y-auto">
+                  {msgList.map((m) => (
+                    <div
+                      key={m.id}
+                      className="rounded-xl border border-white/5 bg-[#0a0e1a] p-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs font-bold text-slate-100">
+                              {m.title}
+                            </span>
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                                m.kind === "all"
+                                  ? "bg-amber-500/20 text-amber-300"
+                                  : "bg-sky-500/20 text-sky-300"
+                              }`}
+                            >
+                              {m.kind === "all" ? "📢 همگانی" : "📨 اختصاصی"}
+                            </span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-[11px] text-slate-400">
+                            {m.message}
+                          </p>
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            به: {m.target} •{" "}
+                            {new Date(m.createdAt).toLocaleString("fa-IR")}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => deleteMessage(m.id)}
+                          className="shrink-0 rounded-lg bg-rose-500/10 px-2 py-1 text-[10px] text-rose-400 hover:bg-rose-500/20"
+                        >
+                          🗑️ حذف
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

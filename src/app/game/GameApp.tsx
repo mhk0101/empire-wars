@@ -15,6 +15,7 @@ import NameModal from "./NameModal";
 import InstallPrompt from "./InstallPrompt";
 import GlobalAnnouncement from "./GlobalAnnouncement";
 import NotificationPopup from "./NotificationPopup";
+import Tutorial from "./Tutorial";
 import HomeTab from "./tabs/HomeTab";
 import CityTab from "./tabs/CityTab";
 import TroopsTab from "./tabs/TroopsTab";
@@ -57,10 +58,12 @@ export default function GameApp() {
   const [tab, setTab] = useState("home");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showName, setShowName] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   // فقط یک‌بار مودال نام را در ابتدای کار بررسی کن
   const nameCheckedRef = useRef(false);
+  const tutorialCheckedRef = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -77,6 +80,13 @@ export default function GameApp() {
         nameCheckedRef.current = true;
         if (d.player && !d.player.nameChosen) {
           setShowName(true);
+        }
+      }
+      // نمایش آموزش فقط برای کاربران جدید و پس از تعیین نام
+      if (!tutorialCheckedRef.current) {
+        tutorialCheckedRef.current = true;
+        if (d.player && !d.player.tutorialDone && d.player.nameChosen) {
+          setShowTutorial(true);
         }
       }
     } catch (e) {
@@ -100,6 +110,17 @@ export default function GameApp() {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
   }, []);
+
+  // نمایش آموزش پس از تعیین نام (کاربران جدید)
+  useEffect(() => {
+    if (showName) return; // تا مودال نام باز است صبر کن
+    if (!data?.player) return;
+    if (tutorialCheckedRef.current) return;
+    tutorialCheckedRef.current = true;
+    if (data.player.nameChosen && !data.player.tutorialDone) {
+      setShowTutorial(true);
+    }
+  }, [showName, data?.player]);
 
   // اسکرول خودکار تب فعال به مرکز اسلایدر
   useEffect(() => {
@@ -295,6 +316,16 @@ export default function GameApp() {
           onClose={() => setShowName(false)}
           onSaved={setPlayer}
           notify={notify}
+        />
+      )}
+
+      {/* آموزش اولیه (فقط یک‌بار برای کاربران جدید) */}
+      {showTutorial && data.player && (
+        <Tutorial
+          onDone={() => {
+            setShowTutorial(false);
+            setPlayer({ ...data.player, tutorialDone: true });
+          }}
         />
       )}
 

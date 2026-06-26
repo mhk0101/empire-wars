@@ -1,17 +1,19 @@
 import { getOrCreatePlayer, syncPlayer, getPlayerById } from "@/game/session";
 import {
   TROOPS,
+  RESOURCE_INFO,
   computePower,
   levelFromXp,
   XP_REWARDS,
   type TroopKey,
 } from "@/game/config";
-import { isShielded } from "@/game/logic";
+import { isShielded, toFa } from "@/game/logic";
 import { processQueues } from "@/game/queue";
 import { logActivity } from "@/game/activity";
 import { trackMission } from "@/game/missions";
+import { sendMessage } from "@/game/telegram";
 import { db } from "@/db";
-import { players, battleReports } from "@/db/schema";
+import { players, battleReports, notifications } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -174,6 +176,42 @@ export async function POST(req: Request) {
     `${attacker.username} به تو حمله کرد — ${win ? "شکست خوردی" : "دفاع موفق"}`
   );
   await trackMission(attacker.id, "attack", 1);
+
+  // ===== اطلاع‌رسانی حمله به قربانی (مدافع) =====
+  const totalLoot = (loot.gold ?? 0) + (loot.food ?? 0) + (loot.stone ?? 0);
+  const defTitle = win
+    ? `${attacker.username} به تو حمله کرد و پیروز شد! ⚔️`
+    : `حمله ${attacker.username} دفع شد! 🛡️`;
+  const lootStr = win && totalLoot > 0
+    ? ` غنیمت برده: ${Object.entries(loot)
+        .filter(([, a]) => a > 0)
+        .map(([r, a]) => `${toFa(a)} ${RESOURCE_INFO[r]?.emoji ?? ""}`)
+        .join("، ")}.`
+    : "";
+  const defMsg = win
+    ? `⚠️ ${attacker.username} (سطح ${toFa(attacker.level)}) به شهرت حمله کرد و پیروز شد!${lootStr} نیروهایت تا ${win ? "۷۰٪" : "۱۰٪"} آسیب دیدند. اکنون ۴ ساعت سپر دفاعی داری.`
+    : `✅ ${attacker.username} (سطح ${toFa(attacker.level)}) به شهرت حمله کرد اما ارتش تو دفاع موفقی کرد!`;
+
+  // ۱) پاپ‌آپ داخل بازی برای مدافع
+  await db.insert(notifications).values({
+    playerId: target.id,
+    title: defTitle,
+    message: defMsg,
+    icon: win ? "⚔️" : "🛡️",
+  });
+
+  // ۲) پیام تلگرام به مدافع (اگر متصل باشد)
+  if (target.telegramId) {
+    try {
+      const shieldTime = new Date(now.getTime() + 6 * 3600_000);
+      const tgText = win
+        ? `⚠️ <b>حمله دشمن!</b>\n\nبازیکن <b>${attacker.username}</b> به شهر شما حمله کرد و <b>پیروز شد</b>.\n${lootStr ? "💰 " + lootStr.trim() + "\n" : ""}🛡️ نیروهای شما آسیب دیدند.\n🛡️ اکنون تا ${shieldTime.toLocaleString("fa-IR")} سپر دفاعی دارید.\n\n⚔️ قدرت حمله: ${toFa(Math.floor(effectiveAtk))} | 🛡️ قدرت دفاع شما: ${toFa(Math.floor(defPower))}`
+        : `🛡️ <b>دفاع موفق!</b>\n\nبازیکن <b>${attacker.username}</b> به شهر شما حمله کرد اما ارتش شما دفاع کرد و پیروز شد!\n\n⚔️ قدرت حمله: ${toFa(Math.floor(effectiveAtk))} | 🛡️ قدرت دفاع شما: ${toFa(Math.floor(defPower))}`;
+      await sendMessage(target.telegramId, tgText);
+    } catch (e) {
+      console.error("Failed to notify defender via telegram", e);
+    }
+  }
 
   const updated = await getPlayerById(attacker.id);
   return Response.json({ win, loot, details, player: updated });

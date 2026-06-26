@@ -76,6 +76,8 @@ export const players = pgTable("players", {
   claimedAchievements: jsonb("claimed_achievements").$type<string[]>().notNull().default([]),
   starterPackBought: boolean("starter_pack_bought").notNull().default(false),
   lastDailyLoginDate: varchar("last_daily_login_date", { length: 16 }).notNull().default(""),
+  // آموزش اولیه: آیا کاربر آموزش را دیده/بسته است؟
+  tutorialDone: boolean("tutorial_done").notNull().default(false),
   // آمار
   attacksWon: integer("attacks_won").notNull().default(0),
   attacksLost: integer("attacks_lost").notNull().default(0),
