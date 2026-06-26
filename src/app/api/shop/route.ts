@@ -74,12 +74,16 @@ export async function POST(req: Request) {
     return Response.json({ player: updated[0] });
   }
 
-  // بوستر تولید (۵۰ جم برای ۲۴ ساعت)
+  // بوستر تولید (۵۰ جم برای ۲۴ ساعت) — مانند VIP استک می‌شود
   if (action === "booster") {
     if (player.gems < 50) {
       return Response.json({ error: "۵۰ جم نیاز دارید." }, { status: 400 });
     }
-    const until = new Date(now.getTime() + 24 * 3600_000);
+    const cur =
+      player.boosterUntil && new Date(player.boosterUntil) > now
+        ? new Date(player.boosterUntil)
+        : now;
+    const until = new Date(cur.getTime() + 24 * 3600_000);
     const updated = await db
       .update(players)
       .set({ gems: player.gems - 50, boosterUntil: until })
@@ -88,12 +92,16 @@ export async function POST(req: Request) {
     return Response.json({ player: updated[0] });
   }
 
-  // سپر دفاعی (۸۰ جم برای ۸ ساعت)
+  // سپر دفاعی (۸۰ جم برای ۸ ساعت) — مانند VIP استک می‌شود
   if (action === "shield") {
     if (player.gems < 80) {
       return Response.json({ error: "۸۰ جم نیاز دارید." }, { status: 400 });
     }
-    const until = new Date(now.getTime() + 8 * 3600_000);
+    const cur =
+      player.shieldUntil && new Date(player.shieldUntil) > now
+        ? new Date(player.shieldUntil)
+        : now;
+    const until = new Date(cur.getTime() + 8 * 3600_000);
     const updated = await db
       .update(players)
       .set({ gems: player.gems - 80, shieldUntil: until })

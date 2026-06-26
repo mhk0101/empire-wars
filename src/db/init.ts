@@ -58,6 +58,21 @@ const STATEMENTS: string[] = [
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_daily_login_date VARCHAR(16) NOT NULL DEFAULT ''`,
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS sign_up_ip VARCHAR(45)`,
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_ip VARCHAR(45)`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP`,
+
+  // ===== جدول جلسات ورود/خروج کاربران =====
+  `CREATE TABLE IF NOT EXISTS login_sessions (
+    id SERIAL PRIMARY KEY,
+    player_id INTEGER NOT NULL,
+    username VARCHAR(64) NOT NULL,
+    login_at TIMESTAMP NOT NULL DEFAULT now(),
+    last_seen_at TIMESTAMP NOT NULL DEFAULT now(),
+    ip VARCHAR(45) NOT NULL DEFAULT '',
+    active BOOLEAN NOT NULL DEFAULT true
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_login_sessions_player ON login_sessions (player_id)`,
 
   // ===== کلن‌ها =====
   `CREATE TABLE IF NOT EXISTS clans (

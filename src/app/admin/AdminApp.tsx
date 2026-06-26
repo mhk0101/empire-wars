@@ -42,11 +42,31 @@ interface Stats {
   online: number;
 }
 
+interface SessionRow {
+  id: number;
+  username: string;
+  level: number;
+  loginCount: number;
+  lastLoginAt: string | null;
+  lastSeenAt: string | null;
+  createdAt: string;
+  online: boolean;
+  signUpIp: string | null;
+}
+
+interface SessionDetail {
+  id: number;
+  loginAt: string;
+  lastSeenAt: string;
+  ip: string;
+  active: boolean;
+}
+
 export default function AdminApp() {
   const [pass, setPass] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<
-    "stats" | "players" | "payments" | "settings" | "announce"
+    "stats" | "players" | "payments" | "settings" | "announce" | "sessions"
   >("stats");
   const [settingsData, setSettingsData] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
@@ -58,6 +78,13 @@ export default function AdminApp() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  // داده‌های فعالیت کاربران
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionDetail, setSessionDetail] = useState<SessionDetail[] | null>(
+    null
+  );
+  const [sessionDetailFor, setSessionDetailFor] = useState<string | null>(null);
   // فرم اطلاع‌رسانی
   const [annTarget, setAnnTarget] = useState<"all" | "user">("all");
   const [annTitle, setAnnTitle] = useState("");
@@ -112,6 +139,18 @@ export default function AdminApp() {
     },
     [api]
   );
+  const loadSessions = useCallback(
+    async (q = "", playerId = 0) => {
+      const d = await api(
+        `?view=sessions&q=${encodeURIComponent(q)}${playerId ? `&playerId=${playerId}` : ""}`
+      );
+      setSessions(d.summary || []);
+      if (playerId > 0) {
+        setSessionDetail(d.detail || []);
+      }
+    },
+    [api]
+  );
 
   async function login() {
     try {
@@ -142,6 +181,7 @@ export default function AdminApp() {
     if (tab === "stats") loadStats();
     if (tab === "payments") loadPayments();
     if (tab === "players") loadPlayers(search);
+    if (tab === "sessions") loadSessions(sessionSearch);
     if (tab === "announce") loadMessages();
     if (tab === "settings")
       api("?view=settings").then((d) => setSettingsData(d.settings || {}));
@@ -339,6 +379,7 @@ export default function AdminApp() {
           {[
             ["stats", "📊 آمار"],
             ["players", "👥 کاربران"],
+            ["sessions", "🕐 فعالیت"],
             ["payments", "💎 پرداخت‌ها"],
             ["announce", "📣 اطلاع‌رسانی"],
             ["settings", "⚙️ تنظیمات"],
@@ -558,6 +599,186 @@ export default function AdminApp() {
                 </div>
               ))}
               {players.length === 0 && (
+                <p className="py-8 text-center text-sm text-slate-500">
+                  کاربری یافت نشد.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* فعالیت کاربران: ورود/خروج و تعداد سر زدن */}
+        {tab === "sessions" && (
+          <div>
+            {/* جستجو */}
+            <div className="mb-3 flex gap-2">
+              <input
+                value={sessionSearch}
+                onChange={(e) => setSessionSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && loadSessions(sessionSearch)}
+                placeholder="جستجوی نام کاربر…"
+                className="flex-1 rounded-xl border border-white/10 bg-[#121a2e] px-3 py-2 text-sm"
+              />
+              <button
+                onClick={() => loadSessions(sessionSearch)}
+                className="btn-gold rounded-xl px-4 text-sm"
+              >
+                جستجو
+              </button>
+            </div>
+
+            {/* پنل جزئیات جلسات یک کاربر */}
+            {sessionDetail && (
+              <div className="mb-4 rounded-2xl border border-[#f5c542]/30 bg-[#121a2e] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-[#f5c542]">
+                    🕐 جزئیات جلسات: {sessionDetailFor}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setSessionDetail(null);
+                      setSessionDetailFor(null);
+                    }}
+                    className="text-[11px] text-slate-400"
+                  >
+                    ✕ بستن
+                  </button>
+                </div>
+                {sessionDetail.length === 0 ? (
+                  <p className="text-center text-xs text-slate-500">
+                    جلسه‌ای ثبت نشده است.
+                  </p>
+                ) : (
+                  <div className="max-h-80 space-y-2 overflow-y-auto">
+                    {sessionDetail.map((s) => {
+                      const duration =
+                        (new Date(s.lastSeenAt).getTime() -
+                          new Date(s.loginAt).getTime()) /
+                        1000;
+                      const durText =
+                        duration < 60
+                          ? `${Math.floor(duration)} ثانیه`
+                          : duration < 3600
+                            ? `${Math.floor(duration / 60)} دقیقه`
+                            : `${Math.floor(duration / 3600)} ساعت`;
+                      return (
+                        <div
+                          key={s.id}
+                          className="rounded-xl bg-[#0a0e1a] p-3 text-[11px]"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-slate-200">
+                              {s.active ? "🟢 در حال بازی" : "🔴 خارج شده"}
+                            </span>
+                            <span className="text-slate-500">
+                              مدت: {durText}
+                            </span>
+                          </div>
+                          <div className="mt-1 space-y-0.5 text-slate-400">
+                            <div>
+                              🔹 ورود:{" "}
+                              {new Date(s.loginAt).toLocaleString("fa-IR", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
+                            </div>
+                            <div>
+                              🔸 آخرین فعالیت:{" "}
+                              {new Date(s.lastSeenAt).toLocaleString("fa-IR", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
+                            </div>
+                            {s.ip && s.ip !== "unknown" && (
+                              <div className="font-mono text-slate-500">
+                                🌐 {s.ip}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* خلاصه‌ی فعالیت کاربران */}
+            <div className="space-y-2">
+              {sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className="rounded-2xl border border-white/10 bg-[#121a2e] p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-x-2">
+                      <span className="font-bold">{s.username}</span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                          s.online
+                            ? "bg-emerald-900/50 text-emerald-300"
+                            : "bg-slate-700/50 text-slate-400"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            s.online ? "bg-emerald-400" : "bg-slate-500"
+                          }`}
+                        />
+                        {s.online ? "آنلاین" : "آفلاین"}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        #{s.id} • سطح {fa(s.level)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-lg bg-[#1a2440] px-2 py-1 text-[10px] font-bold text-[#f5c542]">
+                        🔄 {fa(s.loginCount)} بار سر زده
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSessionDetailFor(s.username);
+                          loadSessions(String(s.id), s.id);
+                        }}
+                        className="rounded-lg bg-[#1a2440] px-2 py-1 text-[10px] text-sky-300"
+                      >
+                        🕐 جزئیات
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400">
+                    <span>
+                      🔹 آخرین ورود:{" "}
+                      <span className="text-slate-300">
+                        {s.lastLoginAt
+                          ? new Date(s.lastLoginAt).toLocaleString("fa-IR", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : "—"}
+                      </span>
+                    </span>
+                    <span>
+                      🔸 آخرین فعالیت:{" "}
+                      <span className="text-slate-300">
+                        {s.lastSeenAt
+                          ? new Date(s.lastSeenAt).toLocaleString("fa-IR", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : "—"}
+                      </span>
+                    </span>
+                    <span>
+                      📅 عضویت:{" "}
+                      <span className="text-slate-300">
+                        {new Date(s.createdAt).toLocaleDateString("fa-IR")}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {sessions.length === 0 && (
                 <p className="py-8 text-center text-sm text-slate-500">
                   کاربری یافت نشد.
                 </p>

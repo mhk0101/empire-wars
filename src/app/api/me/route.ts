@@ -7,6 +7,8 @@ import { db } from "@/db";
 import { ensureSchema } from "@/db/init";
 import { clans, players } from "@/db/schema";
 import { eq, gt, sql, count } from "drizzle-orm";
+import { trackSession } from "@/game/sessions";
+import { getClientIp } from "@/game/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,14 @@ export async function GET() {
   await processQueues(base.id);
   await trackMission(base.id, "login", 1);
   const player = (await syncPlayer(base.id)) ?? base;
+
+  // ثبت جلسه‌ی ورود کاربر (برای پنل ادمین)
+  try {
+    const ip = await getClientIp();
+    await trackSession(player.id, player.username, ip);
+  } catch {
+    // اگر خطا داد، بازی خراب نشود
+  }
 
   const rates = productionRates(player as unknown as PlayerLike);
   const capacity = warehouseCapacity(player.buildings.warehouse ?? 0);

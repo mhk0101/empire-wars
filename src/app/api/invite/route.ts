@@ -4,7 +4,7 @@ import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logActivity } from "@/game/activity";
 import { trackMission } from "@/game/missions";
-import { INVITE_MILESTONES } from "@/game/config";
+import { INVITE_MILESTONES, dayKey } from "@/game/config";
 import { getSettings } from "@/game/settings";
 
 export const dynamic = "force-dynamic";
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
   const rGemsNew = Number(s.inviteGemsNew) || 10;
   const dailyLimit = Number(s.inviteDailyLimit) || 2;
 
-  // محدودیت دعوت روزانه
-  const today = new Date().toISOString().slice(0, 10);
+  // محدودیت دعوت روزانه — با کلید تاریخ سازگار با سرور (تهران)
+  const today = dayKey();
   const usedToday = inv.lastInviteDate === today ? inv.dailyInvites : 0;
   if (usedToday >= dailyLimit) {
     return Response.json(

@@ -11,8 +11,10 @@ import {
   activityLog,
   playerMissions,
   clanMessages,
+  loginSessions,
 } from "@/db/schema";
 import { eq, desc, ilike, or, sql, count } from "drizzle-orm";
+import { cleanupStaleSessions } from "@/game/sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +113,78 @@ export async function GET(req: Request) {
         pendingPays,
         online,
       },
+    });
+  }
+
+  // ===== فعالیت کاربران: ورود/خروج و تعداد سر زدن =====
+  if (view === "sessions") {
+    // ابتدا جلسه‌های منقضی‌شده را پاک‌سازی کن
+    await cleanupStaleSessions();
+
+    const q = (url.searchParams.get("q") ?? "").trim();
+
+    // خلاصه‌ی فعالیت همه کاربران (برای لیست اصلی)
+    const onlineThreshold = new Date(Date.now() - 5 * 60_000);
+    const summary = await db
+      .select({
+        id: players.id,
+        username: players.username,
+        level: players.level,
+        loginCount: players.loginCount,
+        lastLoginAt: players.lastLoginAt,
+        lastSeenAt: players.lastSeenAt,
+        createdAt: players.createdAt,
+        signUpIp: players.signUpIp,
+      })
+      .from(players)
+      .where(
+        q
+          ? or(
+              ilike(players.username, `%${q}%`),
+              sql`cast(${players.id} as text) = ${q}`
+            )
+          : sql`true`
+      )
+      .orderBy(desc(players.lastSeenAt))
+      .limit(100);
+
+    // علامت‌گذاری آنلاین/آفلاین
+    const summaryWithStatus = summary.map((s) => {
+      const online =
+        s.lastSeenAt && new Date(s.lastSeenAt) > onlineThreshold;
+      return {
+        ...s,
+        online,
+        lastLoginAt: s.lastLoginAt
+          ? new Date(s.lastLoginAt).toISOString()
+          : null,
+        lastSeenAt: s.lastSeenAt
+          ? new Date(s.lastSeenAt).toISOString()
+          : null,
+        createdAt: new Date(s.createdAt).toISOString(),
+      };
+    });
+
+    // اگر آیدی خاصی خواسته شده، جزئیات جلسات آن کاربر را بده
+    const detailId = Number(url.searchParams.get("playerId") || 0);
+    let detail = null;
+    if (detailId > 0) {
+      const sessions = await db
+        .select()
+        .from(loginSessions)
+        .where(eq(loginSessions.playerId, detailId))
+        .orderBy(desc(loginSessions.loginAt))
+        .limit(50);
+      detail = sessions.map((s) => ({
+        ...s,
+        loginAt: new Date(s.loginAt).toISOString(),
+        lastSeenAt: new Date(s.lastSeenAt).toISOString(),
+      }));
+    }
+
+    return Response.json({
+      summary: summaryWithStatus,
+      detail,
     });
   }
 

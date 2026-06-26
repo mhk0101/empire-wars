@@ -90,6 +90,22 @@ export const players = pgTable("players", {
   // امنیت: IP محل ساخت اکانت و آخرین IP ورود
   signUpIp: varchar("sign_up_ip", { length: 45 }),
   lastIp: varchar("last_ip", { length: 45 }),
+  // ردیابی ورود: تعداد دفعات سر زدن و آخرین بازدید
+  loginCount: integer("login_count").notNull().default(0),
+  lastLoginAt: timestamp("last_login_at"),
+  lastSeenAt: timestamp("last_seen_at"),
+});
+
+// ثبت جلسات ورود/خروج کاربران (برای پنل ادمین)
+export const loginSessions = pgTable("login_sessions", {
+  id: serial("id").primaryKey(),
+  playerId: integer("player_id").notNull(),
+  username: varchar("username", { length: 64 }).notNull(),
+  loginAt: timestamp("login_at").notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+  ip: varchar("ip", { length: 45 }).notNull().default(""),
+  // آیا این جلسه هنوز فعال است (کاربر آنلاین است)
+  active: boolean("active").notNull().default(true),
 });
 
 // کلن‌ها

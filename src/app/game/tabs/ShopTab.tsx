@@ -241,7 +241,9 @@ export default function ShopTab({ data, setPlayer, notify }: TabProps) {
               +۵۰٪ تولید همه منابع — ۲۴ ساعت
             </p>
             {boosterActive && (
-              <p className="mt-1 text-[11px] text-emerald-400">فعال ✅</p>
+              <p className="mt-1 text-[11px] text-emerald-400">
+                فعال تا {new Date(p.boosterUntil!).toLocaleString("fa-IR", { dateStyle: "short", timeStyle: "short" })}
+              </p>
             )}
           </div>
           <button
@@ -263,7 +265,9 @@ export default function ShopTab({ data, setPlayer, notify }: TabProps) {
               مصونیت از حملات — ۸ ساعت
             </p>
             {shieldActive && (
-              <p className="mt-1 text-[11px] text-emerald-400">فعال ✅</p>
+              <p className="mt-1 text-[11px] text-emerald-400">
+                فعال تا {new Date(p.shieldUntil!).toLocaleString("fa-IR", { dateStyle: "short", timeStyle: "short" })}
+              </p>
             )}
           </div>
           <button
