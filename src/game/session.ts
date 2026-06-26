@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/init";
 import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { collectResources } from "./logic";
@@ -7,6 +8,16 @@ import { computePower } from "./config";
 
 const TOKEN_COOKIE = "ew_token";
 const PID_COOKIE = "ew_pid";
+
+// تضمین می‌کند که جدول‌های دیتابیس و ستون‌ها وجود دارند پیش از هر کوئری.
+// این تابع فقط یک‌بار در هر پردازش اجرا می‌شود (کش داخلی دارد).
+async function ensureReady() {
+  try {
+    await ensureSchema();
+  } catch {
+    // حتی اگر شکست خورد، ادامه بده تا خطای اصلی گزارش شود
+  }
+}
 
 function randomCode(len = 8) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -30,6 +41,7 @@ const NAMES = [
 // دریافت بازیکن بر اساس توکن دستگاه پایدار
 // اولویت: هدر x-ew-token (از localStorage، قابل اعتماد در وب‌ویو تلگرام) سپس کوکی
 export async function getOrCreatePlayer() {
+  await ensureReady();
   const store = await cookies();
   const hdrs = await headers();
   // توکن از هدر کلاینت (localStorage) یا کوکی
@@ -175,6 +187,7 @@ export async function getOrCreatePlayerByTelegram(
   telegramId: string,
   displayName: string
 ) {
+  await ensureReady();
   const existing = await db
     .select()
     .from(players)

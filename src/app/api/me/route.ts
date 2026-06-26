@@ -4,12 +4,15 @@ import { warehouseCapacity, levelFromXp, armyPower } from "@/game/config";
 import { processQueues, getActiveQueues } from "@/game/queue";
 import { trackMission } from "@/game/missions";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/init";
 import { clans, players } from "@/db/schema";
 import { eq, gt, sql, count } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  // اطمینان از وجود جدول‌ها پیش از هر کوئری
+  await ensureSchema();
   const base = await getOrCreatePlayer();
   // کاربر مسدودشده اجازه ورود ندارد
   if (base.banned) {
