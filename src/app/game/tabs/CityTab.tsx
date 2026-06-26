@@ -162,7 +162,7 @@ export default function CityTab({
               ) : null}
 
               <span
-                className={`iso-emoji ${key === "command" ? "iso-emoji-lg" : ""}`}
+                className="iso-emoji"
                 style={{ opacity: lvl === 0 ? 0.45 : 1 }}
               >
                 {key === "farm" ? (
@@ -171,9 +171,7 @@ export default function CityTab({
                   def.emoji
                 )}
               </span>
-              <span
-                className={`iso-label ${key === "command" ? "iso-label-lg" : ""}`}
-              >
+              <span className="iso-label">
                 {def.name} {lvl > 0 ? `Lv.${fa(lvl)}` : "🔒"}
               </span>
 

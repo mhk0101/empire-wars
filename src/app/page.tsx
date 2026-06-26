@@ -72,7 +72,7 @@ export default function Landing() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/game"
-            className="btn-gold rounded-2xl px-8 py-4 text-lg"
+            className="btn-gold glow rounded-2xl px-8 py-4 text-lg"
           >
             🎮 شروع رایگان
           </Link>
@@ -111,7 +111,10 @@ export default function Landing() {
         </h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <div key={f.title} className="card rounded-2xl p-6">
+            <div
+              key={f.title}
+              className="card rounded-2xl p-6 transition hover:card-gold"
+            >
               <div className="mb-3 text-4xl">{f.emoji}</div>
               <h3 className="mb-2 text-lg font-bold text-[#f5c542]">{f.title}</h3>
               <p className="text-sm leading-relaxed text-slate-300">{f.desc}</p>
@@ -130,7 +133,7 @@ export default function Landing() {
           {buildings.map(([e, n]) => (
             <div
               key={n}
-              className="card flex flex-col items-center gap-2 rounded-2xl p-5 text-center"
+              className="card flex flex-col items-center gap-2 rounded-2xl p-5 text-center transition hover:-translate-y-1 hover:card-gold"
             >
               <span className="text-4xl">{e}</span>
               <span className="text-sm font-semibold text-slate-200">{n}</span>
@@ -160,7 +163,7 @@ export default function Landing() {
 
       {/* CTA پایانی */}
       <section className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <div className="card-gold card rounded-3xl p-10">
+        <div className="card-gold card glow rounded-3xl p-10">
           <h2 className="text-3xl font-black gold-text">
             آماده‌ای فرمانده شوی؟
           </h2>

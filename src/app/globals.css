@@ -175,18 +175,6 @@ body {
   line-height: 1;
   filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.5));
 }
-/* مرکز فرماندهی بزرگ‌تر و برجسته‌تر */
-.iso-emoji-lg {
-  font-size: 60px;
-  filter: drop-shadow(0 0 14px rgba(245, 197, 66, 0.55))
-    drop-shadow(0 8px 6px rgba(0, 0, 0, 0.6));
-}
-.iso-label-lg {
-  font-size: 11px;
-  color: #f5c542;
-  border-color: rgba(245, 197, 66, 0.5);
-  background: rgba(10, 14, 26, 0.9);
-}
 .iso-label {
   margin-top: 2px;
   font-size: 9px;

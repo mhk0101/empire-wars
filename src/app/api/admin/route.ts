@@ -59,7 +59,6 @@ export async function GET(req: Request) {
         banned: players.banned,
         attacksWon: players.attacksWon,
         createdAt: players.createdAt,
-        lastCollect: players.lastCollect,
       })
       .from(players);
     const rows = q
