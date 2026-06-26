@@ -13,7 +13,20 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   // اطمینان از وجود جدول‌ها پیش از هر کوئری
   await ensureSchema();
-  const base = await getOrCreatePlayer();
+  let base;
+  try {
+    base = await getOrCreatePlayer();
+  } catch (e) {
+    // خطای محدودیت ساخت اکانت (rate limit)
+    const err = e as Error & { rateLimited?: boolean };
+    if (err.rateLimited) {
+      return Response.json(
+        { error: err.message, rateLimited: true },
+        { status: 429 }
+      );
+    }
+    return Response.json({ error: "خطا در بارگذاری بازی." }, { status: 500 });
+  }
   // کاربر مسدودشده اجازه ورود ندارد
   if (base.banned) {
     return Response.json(

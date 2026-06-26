@@ -101,11 +101,12 @@ export default function GameApp() {
     refresh();
   }, [refresh]);
 
-  // به‌روزرسانی منابع هر ۳۰ ثانیه (interval فقط یک‌بار ساخته می‌شود)
+  // به‌روزرسانی منابع هر ۳۰ ثانیه (فقط وقتی بازی لود شده و خطا نیست)
   useEffect(() => {
+    if (!data || loadError) return;
     const t = setInterval(refresh, 30000);
     return () => clearInterval(t);
-  }, [refresh]);
+  }, [refresh, data, loadError]);
 
   const notify = useCallback((msg: string, ok = true) => {
     setToast({ msg, ok });

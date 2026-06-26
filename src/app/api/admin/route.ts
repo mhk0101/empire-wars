@@ -60,6 +60,8 @@ export async function GET(req: Request) {
         attacksWon: players.attacksWon,
         createdAt: players.createdAt,
         lastCollect: players.lastCollect,
+        signUpIp: players.signUpIp,
+        lastIp: players.lastIp,
       })
       .from(players);
     const rows = q
@@ -181,6 +183,20 @@ export async function POST(req: Request) {
       .set({ banned: action === "ban" })
       .where(eq(players.id, playerId));
     return Response.json({ ok: true });
+  }
+
+  // بن/مسدود کردن همه‌ی کاربران یک IP (ضد چنداکانتی)
+  if (action === "banIp" || action === "unbanIp") {
+    const ip = String(body.ip || "").trim();
+    if (!ip || ip === "unknown") {
+      return Response.json({ error: "IP نامعتبر." }, { status: 400 });
+    }
+    const result = await db
+      .update(players)
+      .set({ banned: action === "banIp" })
+      .where(eq(players.signUpIp, ip))
+      .returning({ id: players.id });
+    return Response.json({ ok: true, affected: result.length });
   }
 
   if (action === "setResources") {

@@ -87,6 +87,9 @@ export const players = pgTable("players", {
   // زمان آخرین برداشت منابع
   lastCollect: timestamp("last_collect").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // امنیت: IP محل ساخت اکانت و آخرین IP ورود
+  signUpIp: varchar("sign_up_ip", { length: 45 }),
+  lastIp: varchar("last_ip", { length: 45 }),
 });
 
 // کلن‌ها

@@ -56,6 +56,8 @@ const STATEMENTS: string[] = [
   // ستون‌های جدید که ممکن است در دیتابیس قدیمی وجود نداشته باشند:
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS tutorial_done BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_daily_login_date VARCHAR(16) NOT NULL DEFAULT ''`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS sign_up_ip VARCHAR(45)`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS last_ip VARCHAR(45)`,
 
   // ===== کلن‌ها =====
   `CREATE TABLE IF NOT EXISTS clans (

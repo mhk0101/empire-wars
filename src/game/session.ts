@@ -5,6 +5,7 @@ import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { collectResources } from "./logic";
 import { computePower } from "./config";
+import { checkAccountCreationLimit, getClientIp } from "./rateLimit";
 
 const TOKEN_COOKIE = "ew_token";
 const PID_COOKIE = "ew_pid";
@@ -102,6 +103,21 @@ export async function getOrCreatePlayer() {
   }
 
   // ۳) ساخت بازیکن جدید و اتصال به توکن دستگاه
+  // بررسی محدودیت ساخت اکانت بر اساس IP (ضد اسپم)
+  const creationLimit = await checkAccountCreationLimit();
+  if (!creationLimit.allowed) {
+    const err = new Error(creationLimit.reason || "محدودیت ساخت اکانت") as Error & {
+      rateLimited?: boolean;
+      retryAfterSec?: number;
+    };
+    err.rateLimited = true;
+    err.retryAfterSec = creationLimit.retryAfterSec;
+    throw err;
+  }
+
+  // ثبت IP محل ساخت اکانت
+  const ip = await getClientIp();
+
   const username = `${NAMES[Math.floor(Math.random() * NAMES.length)]}_${Math.floor(
     Math.random() * 99999
   )}`;
@@ -129,6 +145,9 @@ export async function getOrCreatePlayer() {
           research: { ...DEFAULT_RESEARCH },
           // سپر ۲۴ ساعته برای بازیکنان جدید
           shieldUntil: new Date(Date.now() + 24 * 3600_000),
+          // ثبت IP محل ساخت اکانت برای امنیت
+          signUpIp: ip,
+          lastIp: ip,
         })
         .returning();
       player = inserted[0];

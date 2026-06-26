@@ -29,6 +29,8 @@ interface PlayerRow {
   attacksWon: number;
   createdAt: string;
   lastCollect: string;
+  signUpIp: string | null;
+  lastIp: string | null;
 }
 
 interface Stats {
@@ -431,6 +433,14 @@ export default function AdminApp() {
                       💰{fa(pl.gold)} • 💎{fa(pl.gems)}
                     </div>
                   </div>
+                  {(pl.signUpIp || pl.lastIp) && (
+                    <div className="mt-1 text-[10px] text-slate-500">
+                      🌐 IP ثبت‌نام: <span className="font-mono">{pl.signUpIp || "—"}</span>
+                      {pl.lastIp && pl.lastIp !== pl.signUpIp && (
+                        <> • آخرین: <span className="font-mono">{pl.lastIp}</span></>
+                      )}
+                    </div>
+                  )}
 
                   {editId === pl.id ? (
                     <div className="mt-3 space-y-2">
@@ -504,6 +514,36 @@ export default function AdminApp() {
                       >
                         {pl.banned ? "✅ رفع مسدودی" : "🚫 مسدود"}
                       </button>
+                      {pl.signUpIp && pl.signUpIp !== "unknown" && (
+                        <button
+                          onClick={async () => {
+                            if (
+                              confirm(
+                                `همه‌ی کاربرانی که از IP «${pl.signUpIp}» ثبت‌نام کرده‌اند مسدود شوند؟`
+                              )
+                            ) {
+                              const d = await api("", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  action: "banIp",
+                                  ip: pl.signUpIp,
+                                }),
+                              });
+                              if (d.error) {
+                                setMsg("خطا: " + d.error);
+                              } else {
+                                setMsg(
+                                  `🚫 ${d.affected} کاربر از این IP مسدود شد`
+                                );
+                                loadPlayers(search);
+                              }
+                            }
+                          }}
+                          className="rounded bg-purple-900/40 px-2 py-1 text-[11px] text-purple-300"
+                        >
+                          🌐 بن IP
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           if (confirm(`کاربر ${pl.username} حذف شود؟`))
