@@ -85,6 +85,8 @@ export default function AdminApp() {
     null
   );
   const [sessionDetailFor, setSessionDetailFor] = useState<string | null>(null);
+  // ورودی بلاک با IP/یوزرنیم
+  const [banInput, setBanInput] = useState("");
   // فرم اطلاع‌رسانی
   const [annTarget, setAnnTarget] = useState<"all" | "user">("all");
   const [annTitle, setAnnTitle] = useState("");
@@ -302,6 +304,37 @@ export default function AdminApp() {
       loadMessages();
     } catch {
       setMsg("خطا در حذف پیام.");
+    }
+  }
+
+  // بلاک/رفع بلاک با IP یا یوزرنیم
+  async function banByTarget(target: string, ban: boolean) {
+    const t = target.trim();
+    if (!t) {
+      setMsg("یک IP یا نام کاربری وارد کن.");
+      return;
+    }
+    try {
+      const d = await api("", {
+        method: "POST",
+        body: JSON.stringify({
+          action: ban ? "banTarget" : "unbanTarget",
+          target: t,
+        }),
+      });
+      if (d.error) {
+        setMsg("خطا: " + d.error);
+        return;
+      }
+      const verb = ban ? "بلاک" : "رفع بلاک";
+      setMsg(
+        `✅ ${fa(d.affected)} کاربر ${verb} شد (${d.type === "ip" ? "IP" : "نام کاربری"})`
+      );
+      setBanInput("");
+      // رفرش لیست
+      loadSessions(sessionSearch);
+    } catch {
+      setMsg("خطا در عملیات.");
     }
   }
 
@@ -610,13 +643,13 @@ export default function AdminApp() {
         {/* فعالیت کاربران: ورود/خروج و تعداد سر زدن */}
         {tab === "sessions" && (
           <div>
-            {/* جستجو */}
+            {/* جستجوی کاربر */}
             <div className="mb-3 flex gap-2">
               <input
                 value={sessionSearch}
                 onChange={(e) => setSessionSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && loadSessions(sessionSearch)}
-                placeholder="جستجوی نام کاربر…"
+                placeholder="جستجوی نام کاربر یا IP…"
                 className="flex-1 rounded-xl border border-white/10 bg-[#121a2e] px-3 py-2 text-sm"
               />
               <button
@@ -625,6 +658,42 @@ export default function AdminApp() {
               >
                 جستجو
               </button>
+            </div>
+
+            {/* باکس بلاک با IP/یوزرنیم */}
+            <div className="mb-4 rounded-2xl border border-rose-500/20 bg-[#121a2e] p-3">
+              <h3 className="mb-2 text-xs font-bold text-rose-300">
+                🚫 بلاک سریع با IP یا نام کاربری
+              </h3>
+              <div className="flex gap-2">
+                <input
+                  value={banInput}
+                  onChange={(e) => setBanInput(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    banInput.trim() &&
+                    banByTarget(banInput, true)
+                  }
+                  placeholder="مثلاً: 192.168.1.5 یا سردار_۱۲۳۴"
+                  className="flex-1 rounded-lg border border-white/10 bg-[#0a0e1a] px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={() => banByTarget(banInput, true)}
+                  className="rounded-lg bg-rose-900/50 px-3 py-2 text-xs font-bold text-rose-300"
+                >
+                  بلاک 🚫
+                </button>
+                <button
+                  onClick={() => banByTarget(banInput, false)}
+                  className="rounded-lg bg-emerald-900/50 px-3 py-2 text-xs font-bold text-emerald-300"
+                >
+                  رفع ✅
+                </button>
+              </div>
+              <p className="mt-1.5 text-[10px] text-slate-500">
+                با وارد کردن IP، تمام اکانت‌های اون IP بلاک می‌شن. با نام کاربری،
+                اکانت‌های هم‌نام.
+              </p>
             </div>
 
             {/* پنل جزئیات جلسات یک کاربر */}
@@ -703,7 +772,18 @@ export default function AdminApp() {
               </div>
             )}
 
-            {/* خلاصه‌ی فعالیت کاربران */}
+            {/* خلاصه‌ی فعالیت کاربران (آنلاین‌ها اول) */}
+            <div className="mb-2 flex items-center gap-3 text-[11px] text-slate-400">
+              <span>
+                🟢 آنلاین:{" "}
+                <b className="text-emerald-400">
+                  {fa(sessions.filter((s) => s.online).length)}
+                </b>
+              </span>
+              <span>
+                👥 کل: <b className="text-slate-300">{fa(sessions.length)}</b>
+              </span>
+            </div>
             <div className="space-y-2">
               {sessions.map((s) => (
                 <div

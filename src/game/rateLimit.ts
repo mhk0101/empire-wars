@@ -70,10 +70,13 @@ export function rateLimit(
 
 // محدودیت ساخت اکانت جدید بر اساس IP
 // حداکثر ۳ اکانت در هر ساعت + ۸ اکانت در هر روز
+// + بلاک خودکار اسپمرها (سریع/تکراری)
 export async function checkAccountCreationLimit(): Promise<{
   allowed: boolean;
   reason?: string;
   retryAfterSec?: number;
+  shouldAutoBan?: boolean;
+  banIp?: string;
 }> {
   const ip = await getClientIp();
   if (ip === "unknown") {
@@ -87,6 +90,20 @@ export async function checkAccountCreationLimit(): Promise<{
       };
     }
     return { allowed: true };
+  }
+
+  // ⚡ تشخیص اسپم سریع: بیش از ۳ اکانت در ۳۰ ثانیه = بلاک خودکار
+  // این الگوی رفتار bot است (هر ۵-۲۰ ثانیه یک اکانت)
+  const fastSpam = rateLimit(`acct:fast:${ip}`, 3, 30_000);
+  if (!fastSpam.allowed) {
+    return {
+      allowed: false,
+      reason:
+        "🚫 سیستم شما را به‌عنوان اسپمر تشخیص داد و بلاک کرد. ساخت اکانت با سرعت غیرمجاز.",
+      retryAfterSec: 3600,
+      shouldAutoBan: true,
+      banIp: ip,
+    };
   }
 
   // محدودیت ساعتی: حداکثر ۳ اکانت در ساعت
@@ -110,6 +127,42 @@ export async function checkAccountCreationLimit(): Promise<{
   }
 
   return { allowed: true };
+}
+
+// ردیابی الگوی نام کاربری برای تشخیص اسپم تکراری
+// اگر از یک IP چندین نام مشابه ساخته شود → تقلب است
+const namePatterns = new Map<string, { base: string; count: number; firstAt: number }>();
+const NAME_PATTERN_WINDOW = 5 * 60_000; // ۵ دقیقه
+const NAME_PATTERN_THRESHOLD = 3; // ۳ نام با پایه‌ی یکسان
+
+// بررسی آیا این نام بخشی از الگوی اسپم تکراری است
+export function checkNamePattern(ip: string, username: string): boolean {
+  const now = Date.now();
+  // استخراج پایه‌ی نام (قسمت قبل از _ یا عدد)
+  const base = username.split(/[_\d]/)[0].trim().toLowerCase();
+  if (!base || base.length < 2) return false;
+
+  const key = `${ip}:${base}`;
+  const entry = namePatterns.get(key);
+
+  if (!entry || now - entry.firstAt > NAME_PATTERN_WINDOW) {
+    namePatterns.set(key, { base, count: 1, firstAt: now });
+    return false;
+  }
+
+  entry.count++;
+  if (entry.count >= NAME_PATTERN_THRESHOLD) {
+    // الگوی تکراری تشخیص داده شد
+    return true;
+  }
+  return false;
+}
+
+// پاک‌سازی الگوی نام یک IP (پس از بلاک)
+export function clearNamePattern(ip: string) {
+  for (const key of namePatterns.keys()) {
+    if (key.startsWith(`${ip}:`)) namePatterns.delete(key);
+  }
 }
 
 // محدودیت کلی API (جلوگیری از flood/سرعت بالا)

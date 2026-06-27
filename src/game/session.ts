@@ -2,10 +2,15 @@ import { cookies, headers } from "next/headers";
 import { db } from "@/db";
 import { ensureSchema } from "@/db/init";
 import { players } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 import { collectResources } from "./logic";
 import { computePower } from "./config";
-import { checkAccountCreationLimit, getClientIp } from "./rateLimit";
+import {
+  checkAccountCreationLimit,
+  getClientIp,
+  checkNamePattern,
+  clearNamePattern,
+} from "./rateLimit";
 
 const TOKEN_COOKIE = "ew_token";
 const PID_COOKIE = "ew_pid";
@@ -106,6 +111,24 @@ export async function getOrCreatePlayer() {
   // بررسی محدودیت ساخت اکانت بر اساس IP (ضد اسپم)
   const creationLimit = await checkAccountCreationLimit();
   if (!creationLimit.allowed) {
+    // ⚡ بلاک خودکار اسپمر: اگر سیستم تشخیص داد سریع اکانت می‌سازد
+    if (creationLimit.shouldAutoBan && creationLimit.banIp) {
+      try {
+        await db
+          .update(players)
+          .set({ banned: true })
+          .where(
+            or(
+              eq(players.signUpIp, creationLimit.banIp),
+              eq(players.lastIp, creationLimit.banIp)
+            )
+          );
+        clearNamePattern(creationLimit.banIp);
+        console.warn(`🚫 AUTO-BAN: IP ${creationLimit.banIp} blocked for spam (fast account creation)`);
+      } catch {
+        // بی‌صدا
+      }
+    }
     const err = new Error(creationLimit.reason || "محدودیت ساخت اکانت") as Error & {
       rateLimited?: boolean;
       retryAfterSec?: number;
@@ -118,9 +141,51 @@ export async function getOrCreatePlayer() {
   // ثبت IP محل ساخت اکانت
   const ip = await getClientIp();
 
+  // 🚫 اگر این IP قبلاً بلاک شده، اجازه ساخت اکانت جدید نده
+  if (ip && ip !== "unknown") {
+    const bannedByIp = await db
+      .select({ id: players.id })
+      .from(players)
+      .where(and(eq(players.banned, true), or(eq(players.signUpIp, ip), eq(players.lastIp, ip))))
+      .limit(1);
+    if (bannedByIp.length) {
+      const err = new Error("این دستگاه/IP به دلیل تخلف مسدود شده است.") as Error & {
+        rateLimited?: boolean;
+      };
+      err.rateLimited = true;
+      throw err;
+    }
+  }
+
   const username = `${NAMES[Math.floor(Math.random() * NAMES.length)]}_${Math.floor(
     Math.random() * 99999
   )}`;
+
+  // ⚡ تشخیص اسپم با نام تکراری: اگر از این IP چندین نام مشابه ساخته شده
+  const nameSpam = checkNamePattern(ip, username);
+  if (nameSpam) {
+    // بلاک خودکار این IP
+    try {
+      await db
+        .update(players)
+        .set({ banned: true })
+        .where(
+          or(
+            eq(players.signUpIp, ip),
+            eq(players.lastIp, ip)
+          )
+        );
+      clearNamePattern(ip);
+      console.warn(`🚫 AUTO-BAN: IP ${ip} blocked for spam (duplicate name pattern: ${username})`);
+    } catch {
+      // بی‌صدا
+    }
+    const err = new Error(
+      "🚫 سیستم شما را به‌عنوان اسپمر تشخیص داد و بلاک کرد (ساخت اکانت با نام تکراری)."
+    ) as Error & { rateLimited?: boolean };
+    err.rateLimited = true;
+    throw err;
+  }
 
   const effectiveToken = token || randomCode(24);
   let player;

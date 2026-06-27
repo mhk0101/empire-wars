@@ -141,29 +141,39 @@ export async function GET(req: Request) {
         q
           ? or(
               ilike(players.username, `%${q}%`),
-              sql`cast(${players.id} as text) = ${q}`
+              sql`cast(${players.id} as text) = ${q}`,
+              eq(players.signUpIp, q)
             )
           : sql`true`
       )
-      .orderBy(desc(players.lastSeenAt))
-      .limit(100);
+      .limit(200);
 
-    // علامت‌گذاری آنلاین/آفلاین
-    const summaryWithStatus = summary.map((s) => {
-      const online =
-        s.lastSeenAt && new Date(s.lastSeenAt) > onlineThreshold;
-      return {
-        ...s,
-        online,
-        lastLoginAt: s.lastLoginAt
-          ? new Date(s.lastLoginAt).toISOString()
-          : null,
-        lastSeenAt: s.lastSeenAt
-          ? new Date(s.lastSeenAt).toISOString()
-          : null,
-        createdAt: new Date(s.createdAt).toISOString(),
-      };
-    });
+    // علامت‌گذاری آنلاین/آفلاین و مرتب‌سازی: اول آنلاین‌ها، بعد آخرین فعالیت
+    const summaryWithStatus = summary
+      .map((s) => {
+        const online =
+          s.lastSeenAt && new Date(s.lastSeenAt) > onlineThreshold;
+        return {
+          ...s,
+          online,
+          lastLoginAt: s.lastLoginAt
+            ? new Date(s.lastLoginAt).toISOString()
+            : null,
+          lastSeenAt: s.lastSeenAt
+            ? new Date(s.lastSeenAt).toISOString()
+            : null,
+          createdAt: new Date(s.createdAt).toISOString(),
+        };
+      })
+      .sort((a, b) => {
+        // اول آنلاین‌ها (online=true) بالاتر از آفلاین‌ها
+        if (a.online !== b.online) return a.online ? -1 : 1;
+        // داخل هر گروه، آخرین فعالیت نزدیک‌تر اول
+        const at = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : 0;
+        const bt = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
+        return bt - at;
+      })
+      .slice(0, 100);
 
     // اگر آیدی خاصی خواسته شده، جزئیات جلسات آن کاربر را بده
     const detailId = Number(url.searchParams.get("playerId") || 0);
@@ -265,12 +275,51 @@ export async function POST(req: Request) {
     if (!ip || ip === "unknown") {
       return Response.json({ error: "IP نامعتبر." }, { status: 400 });
     }
+    // هم IP ثبت‌نام و هم آخرین IP را در نظر بگیر
     const result = await db
       .update(players)
       .set({ banned: action === "banIp" })
-      .where(eq(players.signUpIp, ip))
+      .where(or(eq(players.signUpIp, ip), eq(players.lastIp, ip)))
       .returning({ id: players.id });
     return Response.json({ ok: true, affected: result.length });
+  }
+
+  // بلاک با IP یا یوزرنیم (ورودی آزاد از طرف ادمین)
+  // body.target می‌تواند IP یا نام کاربری باشد
+  if (action === "banTarget" || action === "unbanTarget") {
+    const target = String(body.target || "").trim();
+    if (!target) {
+      return Response.json({ error: "هدف را وارد کنید." }, { status: 400 });
+    }
+    // تشخیص: اگر شامل عدد و نقطه/کولن باشد IP است، در غیر این صورت یوزرنیم
+    const isIp = /^[\d.:a-fA-F]+$/.test(target);
+    const result = isIp
+      ? await db
+          .update(players)
+          .set({ banned: action === "banTarget" })
+          .where(or(eq(players.signUpIp, target), eq(players.lastIp, target)))
+          .returning({ id: players.id, username: players.username })
+      : await db
+          .update(players)
+          .set({ banned: action === "banTarget" })
+          .where(ilike(players.username, target))
+          .returning({ id: players.id, username: players.username });
+
+    // اگر یوزرنیم پیدا نشد، فقط IP اطرافش رو هم چک کن
+    let affected = result.length;
+    if (affected === 0 && !isIp) {
+      return Response.json({
+        ok: false,
+        error: `کاربری با نام «${target}» پیدا نشد.`,
+      });
+    }
+
+    return Response.json({
+      ok: true,
+      affected,
+      banned: action === "banTarget",
+      type: isIp ? "ip" : "username",
+    });
   }
 
   if (action === "setResources") {
