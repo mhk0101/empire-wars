@@ -31,6 +31,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
+      <head>
+        {/* اسکریپت رسمی تلگرام برای Mini App — window.Telegram.WebApp را فراهم می‌کند */}
+        <script src="https://telegram.org/js/telegram-web-app.js" async />
+      </head>
       <body
         className="bg-[#0a0e1a] text-slate-100 antialiased"
         suppressHydrationWarning

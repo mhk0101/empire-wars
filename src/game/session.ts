@@ -1,7 +1,17 @@
 import { cookies, headers } from "next/headers";
 import { db } from "@/db";
 import { ensureSchema } from "@/db/init";
-import { players } from "@/db/schema";
+import {
+  players,
+  buildQueue,
+  trainQueue,
+  activityLog,
+  playerMissions,
+  clanMessages,
+  marketOrders,
+  paymentRequests,
+  loginSessions,
+} from "@/db/schema";
 import { eq, or, and } from "drizzle-orm";
 import { collectResources } from "./logic";
 import { computePower } from "./config";
@@ -11,6 +21,7 @@ import {
   checkNamePattern,
   clearNamePattern,
 } from "./rateLimit";
+import { verifyTelegramInitData } from "./telegramAuth";
 
 const TOKEN_COOKIE = "ew_token";
 const PID_COOKIE = "ew_pid";
@@ -67,6 +78,23 @@ const DEFAULT_RESEARCH = {
   training: 0,
 };
 
+// پاک‌سازی داده‌های مرتبط با یک بازیکن (برای ادغام/حذف اکانت)
+async function cleanupPlayerData(playerId: number) {
+  try {
+    await db.delete(buildQueue).where(eq(buildQueue.playerId, playerId));
+    await db.delete(trainQueue).where(eq(trainQueue.playerId, playerId));
+    await db.delete(activityLog).where(eq(activityLog.playerId, playerId));
+    await db.delete(playerMissions).where(eq(playerMissions.playerId, playerId));
+    await db.delete(clanMessages).where(eq(clanMessages.playerId, playerId));
+    await db.delete(marketOrders).where(eq(marketOrders.sellerId, playerId));
+    await db.delete(paymentRequests).where(eq(paymentRequests.playerId, playerId));
+    await db.delete(loginSessions).where(eq(loginSessions.playerId, playerId));
+    await db.delete(players).where(eq(players.id, playerId));
+  } catch {
+    // بی‌صدا
+  }
+}
+
 // دریافت بازیکن بر اساس توکن دستگاه پایدار
 // اولویت: هدر x-ew-token (از localStorage، قابل اعتماد در وب‌ویو تلگرام) سپس کوکی
 export async function getOrCreatePlayer() {
@@ -76,6 +104,154 @@ export async function getOrCreatePlayer() {
   // توکن از هدر کلاینت (localStorage) یا کوکی
   const token =
     hdrs.get("x-ew-token") || store.get(TOKEN_COOKIE)?.value || "";
+
+  // ۰) ★ هماهنگ‌سازی تلگرام و سایت (ادغام هوشمند اکانت‌ها)
+  //    سناریوها:
+  //    A) کاربر اول تو سایت بازی کرده (device token)، بعد ربات رو استارت کرده (telegramId)
+  //       → وقتی از ربات وارد بازی می‌شه، هر دو اکانت پیدا می‌شن و ادغام می‌شن
+  //    B) فقط اکانت ربات هست → device token بهش وصل می‌شه
+  //    C) فقط اکانت سایت هست → telegramId بهش وصل می‌شه
+  //    D) هیچ‌کدوم نیست → اکانت جدید با نام تلگرام ساخته می‌شه
+  const tgInitData = hdrs.get("x-tg-init-data");
+  if (tgInitData) {
+    const tgUser = verifyTelegramInitData(tgInitData);
+    if (tgUser) {
+      const tgId = String(tgUser.id);
+      const ip = await getClientIp().catch(() => "unknown");
+
+      // هر دو اکانت رو پیدا کن: با telegramId و با deviceToken
+      const byTg = await db
+        .select()
+        .from(players)
+        .where(eq(players.telegramId, tgId))
+        .limit(1);
+      const byToken = token
+        ? await db
+            .select()
+            .from(players)
+            .where(eq(players.deviceToken, token))
+            .limit(1)
+        : [];
+
+      const tgAccount = byTg[0] ?? null; // اکانت ربات (B)
+      const devAccount = byToken[0] ?? null; // اکانت سایت (A)
+
+      // ===== مورد A: هر دو وجود دارند و متفاوت‌اند → ادغام =====
+      if (tgAccount && devAccount && tgAccount.id !== devAccount.id) {
+        // اکانتی که پیشرفت بیشتری داره (قدرت بیشتر) رو نگه دار
+        const keepTg = tgAccount.power >= devAccount.power;
+        const primary = keepTg ? tgAccount : devAccount;
+        const secondary = keepTg ? devAccount : tgAccount;
+
+        // ⚠️ مهم: اول اکانت دوم رو کلاً پاک کن (برای جلوگیری از برخورد UNIQUE)
+        // telegram_id و device_token هر دو UNIQUE هستن
+        const bonusGems = secondary.gems;
+        await cleanupPlayerData(secondary.id);
+
+        // حالا اکانت اصلی رو آپدیت کن: telegramId + deviceToken + جم‌های ادغام‌شده
+        await db
+          .update(players)
+          .set({
+            telegramId: tgId,
+            deviceToken: token || primary.deviceToken,
+            gems: primary.gems + bonusGems,
+            lastIp: ip,
+          })
+          .where(eq(players.id, primary.id));
+
+        console.warn(
+          `🔗 MERGE: Account #${secondary.id} merged into #${primary.id} (telegramId=${tgId})`
+        );
+
+        // اکانت ادغام‌شده رو برگردون
+        const merged = await db
+          .select()
+          .from(players)
+          .where(eq(players.id, primary.id))
+          .limit(1);
+        return merged[0];
+      }
+
+      // ===== مورد B: فقط اکانت ربات هست → device token رو وصل کن =====
+      if (tgAccount && !devAccount) {
+        if (token && tgAccount.deviceToken !== token) {
+          await db
+            .update(players)
+            .set({ deviceToken: token, lastIp: ip })
+            .where(eq(players.id, tgAccount.id));
+        }
+        return tgAccount;
+      }
+
+      // ===== مورد C: فقط اکانت سایت هست → telegramId رو وصل کن =====
+      if (!tgAccount && devAccount) {
+        await db
+          .update(players)
+          .set({
+            telegramId: tgId,
+            // اگر اکانت سایت هنوز نام‌گذاری نشده، نام تلگرام رو بذار
+            ...(devAccount.nameChosen
+              ? {}
+              : {
+                  nameChosen: true,
+                  username:
+                    [tgUser.first_name, tgUser.last_name]
+                      .filter(Boolean)
+                      .join(" ")
+                      .trim()
+                      .slice(0, 24) || devAccount.username,
+                }),
+            lastIp: ip,
+          })
+          .where(eq(players.id, devAccount.id));
+        return devAccount;
+      }
+
+      // ===== مورد D: هیچ اکانتی نیست → بررسی امنیتی و ساخت جدید =====
+      // بررسی امنیتی: آیا این IP بلاک شده؟
+      if (ip && ip !== "unknown") {
+        const bannedByIp = await db
+          .select({ id: players.id })
+          .from(players)
+          .where(
+            and(
+              eq(players.banned, true),
+              or(eq(players.signUpIp, ip), eq(players.lastIp, ip))
+            )
+          )
+          .limit(1);
+        if (bannedByIp.length) {
+          const err = new Error(
+            "این دستگاه/IP به دلیل تخلف مسدود شده است."
+          ) as Error & { rateLimited?: boolean };
+          err.rateLimited = true;
+          throw err;
+        }
+      }
+
+      const name =
+        [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ").trim() ||
+        "فرمانده";
+      const inserted = await db
+        .insert(players)
+        .values({
+          telegramId: tgId,
+          username: name.slice(0, 24),
+          nameChosen: true,
+          inviteCode: randomCode(),
+          deviceToken: token || randomCode(24),
+          buildings: { ...DEFAULT_BUILDINGS },
+          troops: { ...DEFAULT_TROOPS },
+          research: { ...DEFAULT_RESEARCH },
+          shieldUntil: new Date(Date.now() + 24 * 3600_000),
+          signUpIp: ip,
+          lastIp: ip,
+        })
+        .returning();
+      return inserted[0];
+    }
+    // اگر initData نامعتبر بود، به روش معمول ادامه بده
+  }
 
   // ۱) تلاش با توکن دستگاه پایدار
   if (token) {

@@ -7,6 +7,10 @@ import { eq, and, desc, sql } from "drizzle-orm";
 // اگر کاربر بیش از این مدت فعال نباشد، جلسه‌اش «خارج‌شده» محسوب می‌شود
 const SESSION_TIMEOUT_MIN = 5; // ۵ دقیقه
 
+// Throttle: آپدیت جلسه فقط هر ۶۰ ثانیه برای هر کاربر (نه با هر رفرش ۳۰ ثانیه‌ای)
+const SESSION_UPDATE_INTERVAL = 60_000; // ۶۰ ثانیه
+const lastUpdateByPlayer = new Map<number, number>();
+
 // ثبت یا ادامه‌ی جلسه‌ی کاربر هنگام ورود به بازی
 // - اگر جلسه‌ی فعلی (کمتر از ۵ دقیقه) دارد → فقط lastSeenAt را به‌روز کن
 // - در غیر این صورت → یک جلسه‌ی جدید بساز و loginCount را افزایش بده
@@ -15,6 +19,19 @@ export async function trackSession(
   username: string,
   ip: string
 ) {
+  // Throttle: اگر کمتر از ۶۰ ثانیه از آخرین آپدیت گذشته، فقط lastSeenAt سبک کن
+  const now = Date.now();
+  const lastUpdate = lastUpdateByPlayer.get(playerId);
+  if (lastUpdate && now - lastUpdate < SESSION_UPDATE_INTERVAL) {
+    // آپدیت سبک: فقط last_seen_at را در جدول players به‌روز کن (۱ کوئری)
+    await db
+      .update(players)
+      .set({ lastSeenAt: new Date() })
+      .where(eq(players.id, playerId));
+    return;
+  }
+  lastUpdateByPlayer.set(playerId, now);
+
   // آیا کاربر جلسه‌ی فعالی دارد؟ (آخرین فعالیت کمتر از ۵ دقیقه پیش)
   // با استفاده از now() در SQL برای دقت کامل (بدون مشکل timezone/bindng)
   const activeSessions = await db

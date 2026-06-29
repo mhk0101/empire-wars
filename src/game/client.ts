@@ -94,8 +94,51 @@ export function getDeviceToken(): string {
   return t;
 }
 
+// استخراج initData تلگرام از Mini App (اگر کاربر از تلگرام وارد شده)
+let cachedTgInitData = "";
+let tgInitChecked = false;
+
+function getTelegramInitData(): string {
+  if (typeof window === "undefined") return "";
+  if (tgInitChecked) return cachedTgInitData;
+  tgInitChecked = true;
+  try {
+    const tg = (window as unknown as {
+      Telegram?: {
+        WebApp?: {
+          initData?: string;
+          ready?: () => void;
+          expand?: () => void;
+        };
+      };
+    }).Telegram;
+    if (tg?.WebApp?.initData) {
+      cachedTgInitData = tg.WebApp.initData;
+      // آماده‌سازی WebView تلگرام
+      try {
+        tg.WebApp.ready?.();
+        tg.WebApp.expand?.();
+      } catch {
+        // بی‌صدا
+      }
+    }
+  } catch {
+    // بی‌صدا
+  }
+  return cachedTgInitData;
+}
+
 function authHeaders(extra: Record<string, string> = {}) {
-  return { "x-ew-token": getDeviceToken(), ...extra };
+  const headers: Record<string, string> = {
+    "x-ew-token": getDeviceToken(),
+    ...extra,
+  };
+  // اگر داخل تلگرام هستیم، initData را هم بفرست تا همان اکانت پیدا شود
+  const tgData = getTelegramInitData();
+  if (tgData) {
+    headers["x-tg-init-data"] = tgData;
+  }
+  return headers;
 }
 
 // تجزیه امن JSON: اگر پاسخ خالی یا غیر-JSON بود، کرش نکن
